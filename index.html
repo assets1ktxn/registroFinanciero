@@ -6779,7 +6779,7 @@
 
     // Medidas usadas solo para calcular la casilla por defecto de una tarjeta de cuenta que
     // el usuario aún no ha movido (misma lógica que getNotePosition para las notas adhesivas).
-    const ACCOUNT_CARD_W = 168, ACCOUNT_CARD_H = 96, ACCOUNT_CARD_GAP = 16;
+    const ACCOUNT_CARD_W = 168, ACCOUNT_CARD_H = 120, ACCOUNT_CARD_GAP = 16;
     function getAccountPosition(acc, idx, containerWidth) {
       if (typeof acc.deckX === 'number' && typeof acc.deckY === 'number') {
         return { x: acc.deckX, y: acc.deckY };
@@ -6840,14 +6840,14 @@
         const posStyle = `left:${pos.x}px; top:${pos.y}px; z-index:${z};`;
 
         deck.innerHTML += `
-          <div data-account-id="${acc.id}" onclick="window.openAccountDetails('${acc.id}')" style="${posStyle}" class="relative bg-gray-900/40 p-4 rounded-xl border border-gray-800 flex items-center gap-3 shadow-md cursor-pointer hover:scale-[1.03] active:scale-[0.98] hover:border-[#00f0ff]/30 transition-all duration-300">
+          <div data-account-id="${acc.id}" onclick="window.openAccountDetails('${acc.id}')" style="${posStyle}" class="relative bg-gray-900/40 p-4 rounded-xl border border-gray-800 shadow-md cursor-pointer hover:scale-[1.03] active:scale-[0.98] hover:border-[#00f0ff]/30 transition-all duration-300">
             <span data-drag-handle onclick="event.stopPropagation()" class="account-card-tape" title="Arrastra para mover"></span>
-            <span class="text-3xl p-2 bg-gray-950 rounded-lg">${acc.emoji}</span>
-            <div class="overflow-hidden w-full">
-              <h3 class="text-xs text-gray-400 font-medium truncate w-full">${acc.name}</h3>
-              <p class="text-lg font-bold tracking-tight text-white truncate w-full">${formatCurrency(acc.balance)}</p>
-              ${badge}
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xl p-1.5 bg-gray-950 rounded-lg flex-shrink-0">${acc.emoji}</span>
+              <h3 class="text-xs text-gray-400 font-medium break-words leading-tight">${acc.name}</h3>
             </div>
+            <p class="text-lg font-bold tracking-tight text-white break-words w-full">${formatCurrency(acc.balance)}</p>
+            ${badge}
           </div>
         `;
       });
