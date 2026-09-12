@@ -355,6 +355,51 @@
     }
     .sticky-note-resize-handle:hover { opacity: 0.85; }
 
+    /* ===== TARJETAS DE CUENTAS: POSICIÓN LIBRE (estilo Diurex, igual que las notas) =====
+       El contenedor #accounts-deck deja de ser una cuadrícula fija: cada tarjeta de cuenta
+       se ubica en absoluto y se puede arrastrar a cualquier parte, igual que las notas
+       adhesivas de los widgets. El selector por ID gana en especificidad sobre las clases
+       de Tailwind (grid/grid-cols/gap) del propio div, así que no hace falta tocar el HTML. */
+    #accounts-deck {
+      position: relative;
+      display: block;
+      min-height: 90px;
+      height: auto;
+      overflow: visible;
+      transition: height 0.15s ease;
+    }
+    #accounts-deck [data-account-id] {
+      position: absolute;
+      width: 168px;
+    }
+    /* Cinta adhesiva que sirve de manija para mover la tarjeta (reemplaza los puntitos),
+       igual en medidas y estilo a la cinta de las notas adhesivas (.sticky-note::before). */
+    #accounts-deck [data-account-id] .account-card-tape {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-2deg);
+      width: 46px;
+      height: 16px;
+      background: rgba(255,255,255,0.35);
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      cursor: grab;
+      touch-action: none;
+      z-index: 10;
+    }
+    #accounts-deck [data-account-id] .account-card-tape:active {
+      cursor: grabbing;
+    }
+    #accounts-deck [data-account-id].account-card-dragging,
+    #accounts-deck [data-account-id].account-card-dragging:hover {
+      transition: none !important;
+      transform: scale(1.05) !important;
+      box-shadow: 8px 18px 30px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08) inset !important;
+      cursor: grabbing !important;
+      z-index: 9999 !important;
+    }
+
     /* ===== SELECTOR DE COLOR Y TRANSPARENCIA (Notas y Tareas) ===== */
     .item-color-picker {
       margin-top: 6px;
@@ -4777,6 +4822,7 @@
     // ESTADO GLOBAL
     let movements = [];
     let accounts = [];
+    let accountDeckZCounter = 0; // Define qué tarjeta de cuenta queda "encima" al arrastrarla (igual que las notas)
     let customSubcategories = [];
     let scheduledNotifications = [];
     let tasks = [];
@@ -6731,10 +6777,23 @@
       }
     }
 
+    // Medidas usadas solo para calcular la casilla por defecto de una tarjeta de cuenta que
+    // el usuario aún no ha movido (misma lógica que getNotePosition para las notas adhesivas).
+    const ACCOUNT_CARD_W = 168, ACCOUNT_CARD_H = 96, ACCOUNT_CARD_GAP = 16;
+    function getAccountPosition(acc, idx, containerWidth) {
+      if (typeof acc.deckX === 'number' && typeof acc.deckY === 'number') {
+        return { x: acc.deckX, y: acc.deckY };
+      }
+      const cols = Math.max(1, Math.floor((containerWidth + ACCOUNT_CARD_GAP) / (ACCOUNT_CARD_W + ACCOUNT_CARD_GAP)));
+      return { x: (idx % cols) * (ACCOUNT_CARD_W + ACCOUNT_CARD_GAP), y: Math.floor(idx / cols) * (ACCOUNT_CARD_H + ACCOUNT_CARD_GAP) };
+    }
+
     function renderAccountsSection() {
       const deck = document.getElementById('accounts-deck');
       if (!deck) return;
       deck.innerHTML = '';
+      const deckContainerWidth = deck.clientWidth || 300;
+      accountDeckZCounter = Math.max(accountDeckZCounter, 0, ...accounts.map(a => (typeof a.deckZIndex === 'number' ? a.deckZIndex : 0)));
 
       let totalNetWorth = 0;
       let accountBalances = [];
@@ -6765,7 +6824,7 @@
         accountBalances.push({ ...acc, balance });
       });
 
-      accountBalances.forEach(acc => {
+      accountBalances.forEach((acc, idx) => {
         if (acc.accountType === 'credito') {
           debts.push(acc);
         } else {
@@ -6775,12 +6834,14 @@
         const badge = acc.accountType === 'credito' 
           ? `<span class="text-[9px] font-bold text-rose-450 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded mt-1 uppercase block w-max">Crédito</span>` 
           : '';
-          
+
+        const pos = getAccountPosition(acc, idx, deckContainerWidth);
+        const z = typeof acc.deckZIndex === 'number' ? acc.deckZIndex : 0;
+        const posStyle = `left:${pos.x}px; top:${pos.y}px; z-index:${z};`;
+
         deck.innerHTML += `
-          <div data-account-id="${acc.id}" onclick="window.openAccountDetails('${acc.id}')" class="relative bg-gray-900/40 p-4 rounded-xl border border-gray-800 flex items-center gap-3 shadow-md cursor-pointer hover:scale-[1.03] active:scale-[0.98] hover:border-[#00f0ff]/30 transition-all duration-300">
-            <span data-drag-handle onclick="event.stopPropagation()" style="touch-action: none;" class="absolute top-1 right-1 p-1 text-gray-600 hover:text-gray-300 cursor-grab active:cursor-grabbing touch-none select-none z-10" title="Arrastra para reordenar">
-              <i data-lucide="grip-vertical" class="w-3.5 h-3.5 pointer-events-none"></i>
-            </span>
+          <div data-account-id="${acc.id}" onclick="window.openAccountDetails('${acc.id}')" style="${posStyle}" class="relative bg-gray-900/40 p-4 rounded-xl border border-gray-800 flex items-center gap-3 shadow-md cursor-pointer hover:scale-[1.03] active:scale-[0.98] hover:border-[#00f0ff]/30 transition-all duration-300">
+            <span data-drag-handle onclick="event.stopPropagation()" class="account-card-tape" title="Arrastra para mover"></span>
             <span class="text-3xl p-2 bg-gray-950 rounded-lg">${acc.emoji}</span>
             <div class="overflow-hidden w-full">
               <h3 class="text-xs text-gray-400 font-medium truncate w-full">${acc.name}</h3>
@@ -6791,6 +6852,15 @@
         `;
       });
       lucide.createIcons();
+
+      // El contenedor es un lienzo absoluto (sin alto propio), así que su alto se calcula
+      // aquí según dónde termina la tarjeta más baja, igual que con las notas adhesivas.
+      let deckMaxBottom = 90;
+      deck.querySelectorAll('[data-account-id]').forEach(el => {
+        deckMaxBottom = Math.max(deckMaxBottom, el.offsetTop + el.offsetHeight);
+      });
+      deck.style.height = (deckMaxBottom + 20) + 'px';
+
       attachMainAccountsDragEvents();
 
       const totalNetWorthEl = document.getElementById('total-net-worth');
@@ -7416,21 +7486,18 @@
       });
     }
 
-    // Habilita reordenar las cuentas arrastrando directamente desde las tarjetas de la
-    // pantalla principal (mismo mecanismo que en el gestor de cuentas). Como aquí las
-    // tarjetas están en una cuadrícula en vez de una lista vertical, la mitad de referencia
-    // para decidir "antes/después" es la horizontal (izquierda/derecha) en vez de la vertical.
+    // Habilita mover las tarjetas de cuenta LIBREMENTE por el panel principal, igual que las
+    // notas adhesivas de los widgets ("estilo Diurex"): ya no se trata de reordenar una lista
+    // (antes/después), sino de soltar la tarjeta en cualquier punto del lienzo. Se arrastra
+    // desde el mismo ícono "grip" de siempre (compatible con mouse y con el dedo en móvil vía
+    // Pointer Events) para no interferir con el clic normal sobre la tarjeta, que abre el
+    // detalle de la cuenta. Al soltar, guarda x/y y el z-index en Firestore (deckX/deckY/
+    // deckZIndex) para que la posición se mantenga al recargar o entre dispositivos, sin tocar
+    // el campo 'order' que usa el gestor de cuentas.
     function attachMainAccountsDragEvents() {
       const container = document.getElementById('accounts-deck');
       if (!container) return;
       let dragState = null;
-
-      const clearDropIndicators = () => {
-        container.querySelectorAll('[data-account-id]').forEach(c => {
-          c.classList.remove('border-l-4', 'border-l-[#00f0ff]', 'border-r-4', 'border-r-[#00f0ff]');
-          delete c.dataset.dropPosition;
-        });
-      };
 
       container.querySelectorAll('[data-account-id]').forEach(card => {
         const handle = card.querySelector('[data-drag-handle]');
@@ -7439,44 +7506,59 @@
         handle.addEventListener('pointerdown', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          dragState = { draggedId: card.getAttribute('data-account-id'), pointerId: e.pointerId };
-          card.classList.add('opacity-50', 'shadow-lg');
+          const rect = card.getBoundingClientRect();
+          dragState = {
+            card,
+            pointerId: e.pointerId,
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
+            moved: false
+          };
+          card.classList.add('account-card-dragging');
           handle.setPointerCapture(e.pointerId);
         });
 
         handle.addEventListener('pointermove', (e) => {
-          if (!dragState || dragState.pointerId !== e.pointerId) return;
-          clearDropIndicators();
-          const overEl = document.elementFromPoint(e.clientX, e.clientY);
-          const target = overEl ? overEl.closest('[data-account-id]') : null;
-          if (target && target !== card) {
-            const rect = target.getBoundingClientRect();
-            const isLeftHalf = e.clientX < rect.left + rect.width / 2;
-            target.classList.add(isLeftHalf ? 'border-l-4' : 'border-r-4', isLeftHalf ? 'border-l-[#00f0ff]' : 'border-r-[#00f0ff]');
-            target.dataset.dropPosition = isLeftHalf ? 'before' : 'after';
-          }
+          if (!dragState || dragState.pointerId !== e.pointerId || dragState.card !== card) return;
+          dragState.moved = true;
+          const boardRect = container.getBoundingClientRect();
+          let x = e.clientX - boardRect.left - dragState.offsetX;
+          let y = e.clientY - boardRect.top - dragState.offsetY;
+          const maxX = Math.max(0, container.clientWidth - card.offsetWidth);
+          x = Math.min(Math.max(0, x), maxX);
+          y = Math.max(0, y);
+          card.style.left = x + 'px';
+          card.style.top = y + 'px';
+          // El panel se sigue ampliando en vivo mientras la tarjeta baja durante el arrastre.
+          const neededHeight = y + card.offsetHeight + 20;
+          if (neededHeight > container.offsetHeight) container.style.height = neededHeight + 'px';
         });
 
         const finishDrag = async (e) => {
-          if (!dragState || dragState.pointerId !== e.pointerId) return;
-          card.classList.remove('opacity-50', 'shadow-lg');
-          const overEl = document.elementFromPoint(e.clientX, e.clientY);
-          const target = overEl ? overEl.closest('[data-account-id]') : null;
-          const draggedId = dragState.draggedId;
-          const dropPosition = target ? target.dataset.dropPosition : null;
+          if (!dragState || dragState.pointerId !== e.pointerId || dragState.card !== card) return;
+          const moved = dragState.moved;
           dragState = null;
-          clearDropIndicators();
-
-          if (target && target.getAttribute('data-account-id') !== draggedId) {
-            await reorderAccounts(draggedId, target.getAttribute('data-account-id'), dropPosition || 'before');
+          card.classList.remove('account-card-dragging');
+          if (!moved) return;
+          accountDeckZCounter += 1;
+          card.style.zIndex = accountDeckZCounter;
+          const id = card.getAttribute('data-account-id');
+          const x = parseFloat(card.style.left) || 0;
+          const y = parseFloat(card.style.top) || 0;
+          try {
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'accounts', id), {
+              deckX: x, deckY: y, deckZIndex: accountDeckZCounter
+            });
+          } catch (error) {
+            console.error("Error al guardar la posición de la cuenta:", error);
           }
         };
 
         handle.addEventListener('pointerup', finishDrag);
         handle.addEventListener('pointercancel', () => {
-          card.classList.remove('opacity-50', 'shadow-lg');
+          if (!dragState || dragState.card !== card) return;
           dragState = null;
-          clearDropIndicators();
+          card.classList.remove('account-card-dragging');
         });
       });
     }
