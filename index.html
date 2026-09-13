@@ -3007,6 +3007,26 @@
         --emoji-size: 1.25rem;
       }
     }
+    .vault-emoji-cat-btn {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      background: rgba(17,24,39,0.9);
+      color: #9ca3af;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: all 0.18s ease;
+    }
+    .vault-emoji-cat-btn:hover { background: rgba(0,240,255,0.08); color: #e5e7eb; border-color: rgba(0,240,255,0.22); }
+    .vault-emoji-cat-active { background: rgba(0,240,255,0.14) !important; color: #00f0ff !important; border-color: rgba(0,240,255,0.42) !important; box-shadow: 0 0 10px rgba(0,240,255,0.12); }
+    [data-vault-emoji-categories]::-webkit-scrollbar { display: none; }
+
+
   </style>
 </head>
 <body class="min-h-screen selection:bg-[#ff007f]/30 p-4 md:p-8 relative">
@@ -13571,20 +13591,193 @@
     // abre el selector), conectado a un diccionario COMPLETO y siempre
     // actualizado (jsdelivr sirve la última versión del paquete de datos), con
     // los nombres y palabras clave de búsqueda en español.
+    // Selector local de emojis: no depende del JSON externo para mostrar/buscar emojis.
+    // El catálogo está embebido en la propia app para que funcione aunque falle el CDN.
+    const VAULT_LOCAL_EMOJIS = [
+      ['😀','grinning cara feliz'],['😃','smiley sonrisa feliz'],['😄','smile sonrisa'],['😁','sonrisa dientes'],['😆','laugh risa'],['😅','sweat nervioso'],['😂','joy risa llorando'],['🤣','rofl risa'],['😊','blush amable'],['😇','innocente angel'],['🙂','ligeramente feliz'],['🙃','al reves'],['😉','guiño guiño'],['😌','tranquilo'],['😍','enamorado amor corazon'],['🥰','amor corazones'],['😘','beso'],['😗','beso'],['😙','beso'],['😚','beso'],['😋','comida delicioso'],['😛','lengua'],['😜','loco lengua'],['🤪','loco'],['🤨','duda'],['🧐','investigar'],['🤓','estudiante lentes'],['😎','cool lentes sol'],['🥳','fiesta celebracion'],['😏','sonrisa'],['😒','aburrido'],['🙄','ojos'],['😬','nervioso'],['🤐','callado'],['😴','dormido sueño'],['🤤','babeando'],['😷','enfermo cubrebocas'],['🤒','enfermo'],['🤕','herido'],['🤢','asco'],['🤮','vomito'],['🤧','estornudo'],['🥵','calor'],['🥶','frio'],['🥴','mareado'],['😵','mareado'],['🤯','sorpresa explota'],['🤠','vaquero'],['🥸','disfraz'],['😈','diablo'],['👿','enojo diablo'],['💀','muerte calavera'],['☠️','calavera muerte'],['👻','fantasma'],['👽','alien extraterrestre'],['🤖','robot'],['💩','caca popo'],['😺','gato feliz'],['😸','gato sonrisa'],['😹','gato risa'],['😻','gato amor'],['😼','gato sonrisa'],['🙀','gato sorpresa'],['😿','gato triste'],['😾','gato enojo'],
+      ['👋','hola mano saludar'],['🤚','mano levantada'],['🖐️','mano dedos'],['✋','alto mano'],['🖖','vulcano mano'],['👌','ok bien'],['🤏','poquito'],['✌️','victoria paz'],['🤞','suerte cruzar dedos'],['🤟','te quiero'],['🤘','rock'],['🤙','llamar'],['👈','izquierda'],['👉','derecha'],['👆','arriba'],['👇','abajo'],['☝️','uno arriba'],['👍','me gusta bien aprobado'],['👎','no me gusta mal'],['👏','aplausos'],['🙌','celebrar manos'],['👐','manos abiertas'],['🤝','acuerdo trato'],['🙏','gracias por favor rezar'],['💪','fuerza brazo'],['🫶','corazon manos'],['❤️','corazon amor rojo'],['🧡','corazon naranja'],['💛','corazon amarillo'],['💚','corazon verde'],['💙','corazon azul'],['💜','corazon morado'],['🖤','corazon negro'],['🤍','corazon blanco'],['🤎','corazon cafe'],['💔','corazon roto'],['❤️‍🔥','amor fuego'],['💯','cien perfecto'],['💥','explosion'],['💫','estrella brillo'],['✨','brillos magia'],['🔥','fuego'],['⭐','estrella'],['🌟','estrella brillante'],['⚡','rayo energia'],['❄️','nieve frio'],['☀️','sol'],['🌈','arcoiris'],
+      ['🐶','perro mascota'],['🐱','gato mascota'],['🐭','raton'],['🐹','hamster'],['🐰','conejo'],['🦊','zorro'],['🐻','oso'],['🐼','panda'],['🐨','koala'],['🐯','tigre'],['🦁','leon'],['🐮','vaca'],['🐷','cerdo ahorro alcancia'],['🐸','rana'],['🐵','mono'],['🙈','mono no veo'],['🙉','mono no oigo'],['🙊','mono no hablo'],['🐔','gallina'],['🐧','pinguino'],['🐦','pajaro'],['🦄','unicornio'],['🐝','abeja'],['🦋','mariposa'],['🐢','tortuga'],['🐍','serpiente'],['🐙','pulpo'],['🐠','pez'],['🐬','delfin'],['🦈','tiburon'],['🌸','flor rosa'],['🌹','rosa flor'],['🌻','girasol'],['🌵','cactus'],['🌲','arbol'],['🍀','trébol suerte'],
+      ['🍎','manzana comida'],['🍐','pera'],['🍊','naranja fruta'],['🍋','limon'],['🍌','platano'],['🍉','sandia'],['🍇','uvas'],['🍓','fresa'],['🍒','cereza'],['🍑','durazno'],['🍍','piña'],['🥝','kiwi'],['🍔','hamburguesa comida'],['🍕','pizza comida'],['🌮','tacos comida'],['🌯','burrito'],['🍟','papas fritas'],['🍿','palomitas'],['🍩','dona'],['🍪','galleta'],['🍰','pastel'],['🎂','cumpleaños pastel'],['🍫','chocolate'],['☕','cafe'],['🧋','bubble tea'],['🥤','refresco bebida'],['🍺','cerveza'],
+      ['⚽','futbol deporte'],['🏀','basquetbol deporte'],['🏈','futbol americano'],['⚾','beisbol'],['🎾','tenis'],['🏆','trofeo ganador'],['🥇','oro primero'],['🥈','plata segundo'],['🥉','bronce tercero'],['🎮','videojuegos'],['🎯','objetivo meta'],['🎲','dado juego'],['🎨','arte pintura'],['🎵','musica nota'],['🎶','musica notas'],['🎸','guitarra'],['🎧','audifonos'],['🎬','cine pelicula'],['🎤','microfono'],['🎉','fiesta confeti'],['🎊','confeti celebracion'],['🎁','regalo'],['🎈','globo'],
+      ['💼','trabajo oficina maletin'],['💻','computadora tecnologia'],['🖥️','computadora pantalla'],['⌨️','teclado'],['🖱️','mouse computadora'],['📱','celular telefono'],['📞','telefono llamada'],['📧','correo email'],['📁','carpeta archivos'],['📂','carpeta abierta'],['📄','documento archivo'],['📝','nota escribir'],['📚','libros estudio'],['📖','libro leer'],['✏️','lapiz escuela'],['📌','chincheta importante'],['📍','ubicacion'],['🔑','llave'],['🔒','candado seguridad'],['🔓','candado abierto'],['⚙️','configuracion ajustes'],['🔧','herramienta'],['🔨','martillo'],['🧰','herramientas'],['💡','idea foco'],['🔔','notificacion campana'],['✅','correcto si terminado'],['❌','incorrecto no'],['⚠️','advertencia alerta'],['❗','importante'],['❓','pregunta duda'],['ℹ️','informacion'],
+      ['💰','dinero efectivo riqueza'],['💵','dinero billete'],['💳','tarjeta credito debito'],['🏦','banco'],['📈','ganancia subida inversiones'],['📉','gasto bajada perdida'],['💸','dinero gastado'],['🪙','moneda'],['💎','diamante'],['🛒','compras carrito'],['🏷️','precio etiqueta'],['🧾','recibo ticket'],['🚗','auto coche transporte'],['🚕','taxi'],['🚌','autobus'],['🚲','bicicleta'],['✈️','avion viaje'],['🚂','tren'],['⛽','gasolina combustible'],['🏠','casa hogar'],['🏢','oficina edificio'],['🏫','escuela colegio'],['🏥','hospital'],['🏖️','playa vacaciones'],['🌎','mundo tierra'],
+      ['🇲🇽','mexico bandera'],['🇺🇸','estados unidos bandera'],['🇨🇦','canada bandera'],['🇪🇸','españa bandera'],['🇫🇷','francia bandera'],['🇯🇵','japon bandera'],['🇧🇷','brasil bandera']
+    ];
+
+    // Índice semántico local para que la búsqueda entienda términos habituales en español,
+    // sin depender de servicios externos. Se complementa con coincidencias por prefijo.
+    const VAULT_EMOJI_SEARCH_ALIASES = {
+      '😀':'feliz felicidad sonrisa alegria contento', '😃':'feliz felicidad sonrisa alegria', '😄':'feliz felicidad sonrisa',
+      '😁':'feliz sonrisa dientes', '😂':'risa reir divertido gracioso', '🤣':'risa reir divertido', '😊':'feliz amable sonrisa',
+      '😍':'amor enamorado pareja corazon', '🥰':'amor enamorado cariño cariño corazones', '🥳':'fiesta celebrar celebracion festejo',
+      '😴':'sueño dormir cansancio', '🤯':'sorpresa asombro shock', '😎':'cool genial lentes vacaciones',
+      '🐶':'perro perros mascota animal cachorro can', '🐱':'gato gatos mascota animal minino', '🐰':'conejo conejito mascota animal',
+      '🦊':'zorro animal naturaleza', '🐻':'oso animal naturaleza', '🐼':'panda animal', '🦁':'leon animal salvaje',
+      '🐷':'cerdo puerquito ahorro alcancia dinero finanzas', '🐸':'rana animal', '🐝':'abeja insecto', '🦋':'mariposa insecto naturaleza',
+      '🌸':'flor flores primavera naturaleza', '🌹':'rosa flor flores amor', '🌻':'girasol flor flores', '🌵':'cactus planta',
+      '🍎':'manzana fruta comida alimento', '🍊':'naranja fruta comida', '🍌':'platano banana fruta comida', '🍓':'fresa fruta',
+      '🍔':'hamburguesa comida alimento restaurante', '🍕':'pizza comida alimento restaurante', '🌮':'tacos taco comida alimento mexico',
+      '🍩':'dona dulce postre', '🍰':'pastel postre cumpleaños', '🎂':'cumpleaños pastel fiesta festejo', '☕':'cafe café bebida desayuno',
+      '⚽':'futbol fútbol deporte', '🏀':'basquetbol basketball baloncesto deporte', '🎾':'tenis deporte', '🏆':'trofeo premio ganador victoria',
+      '🥇':'medalla oro primero ganador premio', '🎮':'videojuego videojuegos jugar juegos', '🎨':'arte dibujo pintura diseño',
+      '🎵':'musica música canción audio', '🎬':'cine pelicula película video', '🎉':'fiesta confeti celebrar festejo', '🎁':'regalo regalos obsequio cumpleaños',
+      '💼':'trabajo oficina empleo negocio profesional', '💻':'computadora computadora pc ordenador laptop tecnologia informática',
+      '🖥️':'computadora pc monitor pantalla tecnologia', '⌨️':'teclado computadora pc', '🖱️':'mouse raton computadora pc',
+      '📱':'celular teléfono telefono movil móvil smartphone', '📧':'correo email correo electrónico mensaje', '📁':'carpeta archivo documentos',
+      '📂':'carpeta archivos documentos', '📄':'documento archivo hoja', '📝':'nota escribir tarea apuntes', '📚':'libros estudio escuela',
+      '📖':'libro lectura leer escuela', '✏️':'lapiz lápiz escuela escribir', '📌':'importante pendiente fijar', '🔑':'llave acceso',
+      '🔒':'seguridad seguro candado privado', '⚙️':'configuracion configuración ajustes opciones', '💡':'idea ideas foco creatividad',
+      '✅':'correcto listo hecho terminado completado aprobado', '❌':'incorrecto no eliminar cancelar error', '⚠️':'alerta advertencia peligro cuidado',
+      '❗':'importante urgente atención', '❓':'pregunta duda ayuda', '💰':'dinero plata efectivo riqueza finanzas ingreso ahorro',
+      '💵':'dinero efectivo billete pesos dólares dolares pago', '💳':'tarjeta credito crédito débito banco pago', '🏦':'banco bancos finanzas dinero',
+      '📈':'ganancia ingreso aumento crecimiento inversiones finanzas', '📉':'gasto perdida pérdida disminucion disminución bajada finanzas',
+      '💸':'gasto gastar dinero pago', '🪙':'moneda dinero cambio', '💎':'lujo riqueza diamante', '🛒':'compras comprar carrito supermercado tienda',
+      '🏷️':'precio etiqueta oferta descuento tienda', '🧾':'recibo factura ticket compra gasto', '🚗':'auto coche carro automóvil transporte',
+      '✈️':'avion avión viaje vacaciones vuelo aeropuerto', '🚂':'tren viaje transporte', '⛽':'gasolina combustible gasolinera auto',
+      '🏠':'casa hogar vivienda domicilio', '🏢':'oficina edificio trabajo empresa', '🏫':'escuela colegio escuela secundaria',
+      '🏥':'hospital salud medico médico', '🏖️':'playa vacaciones mar turismo', '🌎':'mundo tierra planeta viaje',
+      '🇲🇽':'mexico méxico mexicano bandera país pais', '🇺🇸':'estados unidos usa americano bandera', '🇨🇦':'canada canadá bandera',
+      '🇪🇸':'españa español bandera', '🇫🇷':'francia francés bandera', '🇯🇵':'japon japón japonés bandera', '🇧🇷':'brasil brasileño bandera'
+    };
+
+    const VAULT_EMOJI_CATEGORIES = [
+      ['😀', 'Caras y emociones'], ['👋', 'Manos, gestos y corazones'], ['🐶', 'Animales y naturaleza'],
+      ['🍎', 'Comida y bebida'], ['⚽', 'Deportes, juegos y entretenimiento'], ['💼', 'Tecnología, trabajo y objetos'],
+      ['💰', 'Dinero, compras y transporte'], ['🇲🇽', 'Banderas']
+    ];
+
+    const normalizeEmojiSearch = (value) => String(value || '')
+      .toLocaleLowerCase('es-MX')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    function emojiSearchScore(item, rawQuery) {
+      const [emoji, words] = item;
+      const q = normalizeEmojiSearch(rawQuery);
+      if (!q) return 0;
+      const aliases = normalizeEmojiSearch((VAULT_EMOJI_SEARCH_ALIASES[emoji] || '') + ' ' + words);
+      const queryWords = q.split(' ').filter(Boolean);
+      const aliasWords = aliases.split(' ').filter(Boolean);
+      let score = 0;
+      queryWords.forEach(part => {
+        if (!part) return;
+        if (aliasWords.includes(part)) score += 100;
+        else if (aliasWords.some(w => w.startsWith(part))) score += 55;
+        else if (aliases.includes(part)) score += 20;
+      });
+      if (aliases.startsWith(q)) score += 25;
+      return score;
+    }
+
     function ensureVaultEmojiPicker() {
       const holder = document.getElementById('vault-emoji-picker-holder');
-      if (!holder || vaultEmojiPickerEl) return;
-      vaultEmojiPickerEl = document.createElement('emoji-picker');
-      vaultEmojiPickerEl.classList.add('dark');
-      vaultEmojiPickerEl.locale = 'es';
-      vaultEmojiPickerEl.dataSource = 'https://cdn.jsdelivr.net/npm/emoji-picker-element-data@^1/es/emojibase/data.json';
-      vaultEmojiPickerEl.i18n = VAULT_EMOJI_PICKER_I18N_ES;
-      vaultEmojiPickerEl.addEventListener('emoji-click', (event) => {
-        const chosen = event.detail && event.detail.unicode;
+      if (!holder) return;
+      if (holder.dataset.localPickerReady === '1') {
+        const input = holder.querySelector('[data-vault-emoji-search]');
+        if (input) setTimeout(() => input.focus(), 0);
+        return;
+      }
+      holder.dataset.localPickerReady = '1';
+      holder.innerHTML = `
+        <div class="h-full flex flex-col bg-[#0b0d14]">
+          <div class="p-3 border-b border-gray-800 flex-shrink-0">
+            <div class="relative">
+              <input type="search" data-vault-emoji-search autocomplete="off" spellcheck="false"
+                placeholder="Buscar emoji: perro, comida, dinero, trabajo..."
+                class="w-full rounded-xl bg-gray-900 border border-gray-700 px-4 py-2.5 pr-10 text-sm text-white placeholder:text-gray-500 outline-none focus:border-[#00f0ff]">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">⌕</span>
+            </div>
+            <div data-vault-emoji-count class="mt-2 text-[10px] text-gray-500"></div>
+            <div data-vault-emoji-categories class="mt-2 flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin" style="scrollbar-width:none;"></div>
+          </div>
+          <div data-vault-emoji-grid class="flex-1 overflow-y-auto p-3"></div>
+        </div>`;
+
+      const grid = holder.querySelector('[data-vault-emoji-grid]');
+      const search = holder.querySelector('[data-vault-emoji-search]');
+      const count = holder.querySelector('[data-vault-emoji-count]');
+
+      const categoryGroups = () => VAULT_EMOJI_CATEGORIES.map(([startEmoji, label]) => {
+        const start = VAULT_LOCAL_EMOJIS.findIndex(x => x[0] === startEmoji);
+        const end = idx => idx + 1 < VAULT_EMOJI_CATEGORIES.length
+          ? VAULT_LOCAL_EMOJIS.findIndex(x => x[0] === VAULT_EMOJI_CATEGORIES[idx + 1][0])
+          : VAULT_LOCAL_EMOJIS.length;
+        return { label, items: VAULT_LOCAL_EMOJIS.slice(Math.max(0, start), end(VAULT_EMOJI_CATEGORIES.findIndex(x => x[0] === startEmoji))) };
+      });
+
+      const groups = categoryGroups();
+      const categoryNav = holder.querySelector('[data-vault-emoji-categories]');
+      let activeCategory = 'all';
+
+      const renderCategoryNav = () => {
+        categoryNav.innerHTML = `
+          <button type="button" data-vault-cat="all" class="vault-emoji-cat-btn vault-emoji-cat-active">
+            <span class="text-lg leading-none">✨</span><span>Todos</span>
+          </button>
+          ${groups.map((group, i) => {
+            const [icon] = VAULT_EMOJI_CATEGORIES[i];
+            return `<button type="button" data-vault-cat="${i}" class="vault-emoji-cat-btn"><span class="text-lg leading-none">${icon}</span><span>${group.label}</span></button>`;
+          }).join('')}`;
+      };
+
+      const render = (term = '', category = activeCategory) => {
+        activeCategory = category;
+        const q = String(term || '').trim();
+        if (!q) {
+          const visibleGroups = category === 'all' ? groups : [groups[Number(category)]].filter(Boolean);
+          grid.innerHTML = visibleGroups.map(group => `
+            <section class="mb-4">
+              <div class="flex items-center gap-2 px-1 mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-[#00f0ff]">${group.label}</span>
+                <span class="h-px flex-1 bg-gray-800"></span>
+              </div>
+              <div class="grid grid-cols-6 sm:grid-cols-8 gap-1.5">
+                ${group.items.map(([emoji, words]) => `<button type="button" aria-label="${words}" class="h-11 rounded-lg text-2xl hover:bg-white/10 active:scale-90 transition-transform" data-vault-emoji="${emoji}" title="${words}">${emoji}</button>`).join('')}
+              </div>
+            </section>`).join('');
+          const total = visibleGroups.reduce((n,g) => n + g.items.length, 0);
+          count.textContent = `${total} emojis${category === 'all' ? ' · organizados por categoría' : ' · ' + visibleGroups[0].label}`;
+          return;
+        }
+        const pool = category === 'all' ? VAULT_LOCAL_EMOJIS : (groups[Number(category)]?.items || []);
+        const filtered = pool.map(item => [item, emojiSearchScore(item, q)])
+          .filter(([, score]) => score > 0)
+          .sort((a,b) => b[1] - a[1])
+          .map(([item]) => item);
+        grid.innerHTML = filtered.length ? `
+          <section>
+            <div class="flex items-center gap-2 px-1 mb-2">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-[#00f0ff]">Resultados</span>
+              <span class="h-px flex-1 bg-gray-800"></span>
+            </div>
+            <div class="grid grid-cols-6 sm:grid-cols-8 gap-1.5">
+              ${filtered.map(([emoji, words]) => `<button type="button" aria-label="${words}" class="h-11 rounded-lg text-2xl hover:bg-white/10 active:scale-90 transition-transform" data-vault-emoji="${emoji}" title="${words}">${emoji}</button>`).join('')}
+            </div>
+          </section>`
+          : `<div class="text-center text-sm text-gray-500 py-10">No encontré un emoji relacionado con “${String(term).replace(/[<>]/g,'')}”.<div class="text-[11px] mt-1">Prueba con “perro”, “mascota”, “dinero”, “compras”, “escuela” o “viaje”.</div></div>`;
+        count.textContent = `${filtered.length} resultado${filtered.length === 1 ? '' : 's'}`;
+      };
+
+      renderCategoryNav();
+      render();
+      search.addEventListener('input', () => render(search.value, activeCategory));
+      categoryNav.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-vault-cat]');
+        if (!btn) return;
+        activeCategory = btn.getAttribute('data-vault-cat') || 'all';
+        categoryNav.querySelectorAll('[data-vault-cat]').forEach(b => b.classList.remove('vault-emoji-cat-active'));
+        btn.classList.add('vault-emoji-cat-active');
+        render(search.value, activeCategory);
+      });
+      grid.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-vault-emoji]');
+        if (!btn) return;
+        const chosen = btn.getAttribute('data-vault-emoji');
         if (chosen) saveVaultItemIcon(chosen);
       });
-      holder.innerHTML = '';
-      holder.appendChild(vaultEmojiPickerEl);
+      setTimeout(() => search.focus(), 0);
     }
 
     function setVaultIconTab(tab) {
@@ -13606,7 +13799,12 @@
         activeClasses.forEach(c => activeBtn.classList.add(c));
         inactiveClasses.forEach(c => inactiveBtn.classList.add(c));
       }
-      if (tab === 'emoji') ensureVaultEmojiPicker();
+      if (tab === 'emoji') {
+        const modal = document.getElementById('vault-icon-modal');
+        if (modal && !modal.classList.contains('hidden')) {
+          requestAnimationFrame(() => ensureVaultEmojiPicker());
+        }
+      }
     }
 
     function resetVaultIconImageTab() {
@@ -13632,11 +13830,22 @@
       const modal = document.getElementById('vault-icon-modal');
       const content = document.getElementById('vault-icon-content');
       if (modal && content) {
+        // Primero hacemos visible el modal y después construimos el picker para
+        // que emoji-picker-element pueda medir correctamente su contenedor.
         modal.classList.remove('hidden');
         setTimeout(() => {
           modal.classList.remove('opacity-0');
           content.classList.remove('scale-95');
-        }, 10);
+          requestAnimationFrame(() => {
+            ensureVaultEmojiPicker();
+            if (vaultEmojiPickerEl && typeof vaultEmojiPickerEl.focus === 'function') {
+              // No forzamos el foco; solo aseguramos que el componente ya quedó
+              // inicializado después de tener dimensiones reales.
+            }
+          });
+        }, 30);
+      } else {
+        ensureVaultEmojiPicker();
       }
       if (window.lucide) lucide.createIcons();
     }
