@@ -240,7 +240,10 @@
     .sticky-note {
       position: absolute;
       width: 168px;
-      min-height: 50px;
+      /* Una sticky note real parte de un formato prácticamente cuadrado. */
+      min-height: 168px;
+      height: auto;
+      box-sizing: border-box;
       padding: 16px 12px 10px 14px;
       border-radius: 3px 3px 10px 10px;
       display: flex;
@@ -291,24 +294,66 @@
     .sticky-note-rot-5 { transform: rotate(1deg); }
 
     .sticky-note-lines {
-      flex: 1;
+      /* Zona tipo cuaderno: el texto queda centrado y cada renglón se alinea
+         con una línea de 22px, exactamente a la misma separación que el texto. */
+      flex: 1 1 auto;
+      min-height: 104px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
       font-family: var(--item-font, 'Comic Sans MS', 'Segoe Print', cursive, ui-sans-serif, sans-serif);
       font-size: 13px;
       line-height: 22px;
       white-space: pre-wrap;
       word-break: break-word;
-      overflow-y: auto;
-      background-image: repeating-linear-gradient(to bottom, transparent 0px, transparent 20px, var(--note-line-color, rgba(0,0,0,0.12)) 21px);
+      overflow: visible;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 21px,
+        var(--note-line-color, rgba(0,0,0,0.12)) 21px,
+        var(--note-line-color, rgba(0,0,0,0.12)) 22px
+      );
       background-position: 0 4px;
-      padding-top: 2px;
+      background-size: 100% 22px;
+      padding: 4px 10px 6px;
+      box-sizing: border-box;
     }
 
     .sticky-note-actions {
-      opacity: 0;
-      transition: opacity 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      flex: 0 0 auto;
+      opacity: 0.42;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      margin-top: 3px;
+      margin-bottom: 4px;
+      padding-right: 7px;
     }
-    .sticky-note:hover .sticky-note-actions {
-      opacity: 1;
+    .sticky-note:hover .sticky-note-actions { opacity: 0.72; }
+
+    .sticky-note-actions button {
+      width: 23px;
+      height: 23px;
+      padding: 0 !important;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.08);
+      border: 1px solid rgba(0,0,0,0.13);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.16);
+      transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .sticky-note-actions button:hover {
+      transform: translateY(-1px) scale(1.04);
+      background: rgba(255,255,255,0.13);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.20);
+      opacity: 0.95;
     }
 
     .sticky-note-textarea {
@@ -342,34 +387,57 @@
     /* Tarjeta en modo edición/creación: altura mínima reducida para poder hacer notas pequeñas.
        Si el espacio no alcanza para todos los controles, se puede desplazar dentro de la nota. */
     .sticky-note-editing {
-      min-height: 220px;
+      min-height: 168px;
+      height: auto;
       overflow: visible;
     }
 
     /* En edición/creación, el área de texto crece con el contenido para que el texto
        existente siempre sea visible y escribir varias líneas no lo esconda. */
     .sticky-note-editing .sticky-note-textarea {
-      min-height: 105px;
+      min-height: 72px;
       max-height: 420px;
+      height: auto;
+      overflow-y: hidden;
     }
 
-    /* Manija de redimensionado (esquina inferior derecha), visible solo mientras se edita la nota */
+    /* Manija de redimensionado: ahora está abajo y dentro de la notita, visible también
+       cuando está cerrada, para que se entienda que la tarjeta se puede ajustar. */
     .sticky-note-resize-handle {
       position: absolute;
-      right: 1px;
-      bottom: 1px;
-      width: 18px;
-      height: 18px;
+      right: 5px;
+      bottom: 5px;
+      left: auto;
+      transform: none;
+      width: 32px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: nwse-resize;
       touch-action: none;
-      background-image: repeating-linear-gradient(135deg, currentColor 0 2px, transparent 2px 5px);
-      -webkit-mask-image: linear-gradient(315deg, black 0 45%, transparent 46%);
-      mask-image: linear-gradient(315deg, black 0 45%, transparent 46%);
+      border-radius: 999px;
+      background: rgba(0,0,0,0.10);
+      border: 1px solid rgba(0,0,0,0.18);
+      color: currentColor;
       opacity: 0.45;
-      border-radius: 0 0 8px 0;
-      z-index: 5;
+      z-index: 8;
+      box-sizing: border-box;
+      transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
     }
-    .sticky-note-resize-handle:hover { opacity: 0.85; }
+    .sticky-note-resize-handle::after {
+      content: '';
+      width: 14px;
+      height: 5px;
+      border-top: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      border-radius: 999px;
+    }
+    .sticky-note-resize-handle:hover {
+      opacity: 0.9;
+      transform: scale(1.06);
+      background: rgba(255,255,255,0.14);
+    }
 
     /* ===== NOTA-TABLA: nueva opción dentro de Notas Adhesivas =====
        Misma tarjeta tipo Post-it (.sticky-note) pero con un título arriba y,
@@ -10859,12 +10927,10 @@
 
         if (isEditingThis) {
           const w = (typeof n.width === 'number') ? n.width : NOTE_W;
-          const textLines = String(n.text || '').split('\n').length;
-          const estimatedTextHeight = Math.max(60, Math.min(420, 36 + textLines * 21));
-          // En edición solo usamos el alto guardado como mínimo; no lo
-          // volvemos a inflar indefinidamente cada vez que se abre.
-          const h = (typeof n.height === 'number') ? Math.max(n.height, estimatedTextHeight + 55) : Math.max(150, estimatedTextHeight + 55);
-          const sizeStyle = `width:${w}px; height:${h}px;`;
+          // En edición no reutilizamos la altura guardada: esa altura corresponde al
+          // modo normal y puede haber quedado inflada por el antiguo formulario de edición.
+          // La altura real se ajusta al contenido del textarea mediante autoGrowStickyNoteText().
+          const sizeStyle = `width:${w}px; min-height:120px; height:auto;`;
           const style = buildItemStyle(noteDraft.palette, noteDraft.color, noteDraft.opacity, 'note', noteDraft.lineOpacity, noteDraft.font) + posStyle + sizeStyle;
           container.innerHTML += `
             <div id="note-card-edit-${n.id}" class="sticky-note sticky-note-editing ${rotClass}" style="${style}">
@@ -10887,20 +10953,23 @@
           const opacity = (typeof n.opacity === 'number') ? n.opacity : 0.75;
           const lineOpacity = (typeof n.lineOpacity === 'number') ? n.lineOpacity : DEFAULT_NOTE_LINE_OPACITY;
           const font = n.font || DEFAULT_FONT;
-          const sizeStyle = (typeof n.width === 'number' && typeof n.height === 'number')
+          // Las dimensiones guardadas solo se aplican cuando el usuario las cambió
+          // manualmente. Las demás notas conservan el formato cuadrado/natural.
+          const sizeStyle = (n.manualSize === true && typeof n.width === 'number' && typeof n.height === 'number')
             ? `width:${n.width}px; height:${n.height}px;` : '';
           const style = buildItemStyle(palette, color, opacity, 'note', lineOpacity, font) + posStyle + sizeStyle;
           container.innerHTML += `
-            <div class="sticky-note ${rotClass}" data-note-id="${n.id}" style="${style}">
+            <div id="note-card-${n.id}" class="sticky-note ${rotClass}" data-note-id="${n.id}" style="${style}">
               <div class="sticky-note-lines">${escapeHtml(n.text)}</div>
-              <div class="sticky-note-actions flex justify-end gap-1 mt-1">
-                <button onclick="window.startEditNote('${n.id}')" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Editar">
+              <div class="sticky-note-actions">
+                <button type="button" onclick="window.startEditNote('${n.id}')" title="Editar nota" aria-label="Editar nota">
                   <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                 </button>
-                <button onclick="window.deleteNote('${n.id}')" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Eliminar">
+                <button type="button" onclick="window.deleteNote('${n.id}')" title="Eliminar nota" aria-label="Eliminar nota">
                   <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
+              <div class="sticky-note-resize-handle" data-resize-for="note-card-${n.id}" title="Redimensionar nota" aria-label="Redimensionar nota"></div>
             </div>
           `;
         }
@@ -11115,9 +11184,25 @@
           if (neededHeight > container.offsetHeight) container.style.height = neededHeight + 'px';
         });
 
-        const finishResize = (e) => {
+        const finishResize = async (e) => {
           if (!resizeState || resizeState.pointerId !== e.pointerId) return;
+          const state = resizeState;
           resizeState = null;
+          const card = state.card;
+          const noteId = card && card.getAttribute('data-note-id');
+          if (noteId) {
+            const width = Math.round(card.offsetWidth);
+            const height = Math.round(card.offsetHeight);
+            const x = parseFloat(card.style.left) || 0;
+            const y = parseFloat(card.style.top) || 0;
+            try {
+              await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'stickyNotes', noteId), {
+                width, height, manualSize: true, x, y
+              });
+            } catch (error) {
+              console.error("Error al guardar el tamaño de la nota:", error);
+            }
+          }
         };
         handle.addEventListener('pointerup', finishResize);
         handle.addEventListener('pointercancel', finishResize);
@@ -11163,7 +11248,15 @@
       };
       if (card) {
         newNoteData.width = card.offsetWidth;
-        newNoteData.height = card.offsetHeight;
+        newNoteData.height = measureFinalStickyNoteHeight(
+          text,
+          newNoteData.width,
+          noteDraft.palette,
+          noteDraft.color,
+          noteDraft.opacity,
+          noteDraft.lineOpacity,
+          noteDraft.font
+        );
       }
       creatingNewNote = false;
       renderStickyNotes();
@@ -12704,17 +12797,19 @@
       if (!textarea) return;
       textarea.style.height = 'auto';
       const styles = window.getComputedStyle(textarea);
-      const minHeight = parseFloat(styles.minHeight) || 60;
+      const minHeight = parseFloat(styles.minHeight) || 72;
       const maxHeight = parseFloat(styles.maxHeight) || 420;
       const nextHeight = Math.max(minHeight, Math.min(maxHeight, textarea.scrollHeight));
       textarea.style.height = nextHeight + 'px';
       const card = textarea.closest('.sticky-note-editing');
       if (card) {
-        const fixedControls = Array.from(card.children)
+        // Durante la edición sí dejamos espacio para el selector de color, tipografía,
+        // botones y demás controles del formulario. Esta altura es temporal y NO se guarda.
+        const controls = Array.from(card.children)
           .filter(el => el !== textarea && !el.classList.contains('sticky-note-resize-handle'))
           .reduce((sum, el) => sum + el.offsetHeight, 0);
-        const needed = Math.max(120, nextHeight + fixedControls + 28);
-        if (card.offsetHeight < needed) card.style.height = needed + 'px';
+        const needed = Math.max(120, nextHeight + controls + 28);
+        card.style.height = needed + 'px';
       }
       const grid = document.getElementById('sticky-notes-grid');
       if (grid && card) {
@@ -12723,37 +12818,58 @@
       }
     }
 
-        async function saveEditNote(id) {
+    // Calcula la altura FINAL de una nota usando únicamente el contenido que existe
+    // cuando la nota está cerrada. No incluye el selector de color, tipografía, botones
+    // de edición ni la manija de redimensionado. Así la nota queda exactamente del
+    // tamaño de su texto + sus acciones, igual que una nota-tabla ya renderizada.
+    function measureFinalStickyNoteHeight(text, width, palette, color, opacity, lineOpacity, font) {
+      const probe = document.createElement('div');
+      probe.className = 'sticky-note';
+      probe.style.cssText = buildItemStyle(palette, color, opacity, 'note', lineOpacity, font) +
+        `position:absolute; left:-100000px; top:-100000px; width:${width}px; height:auto; min-height:0; visibility:hidden; pointer-events:none; overflow:visible;`;
+      probe.innerHTML = `<div class=\"sticky-note-lines\"></div>`;
+      const textEl = probe.firstElementChild;
+      textEl.textContent = text || '';
+      textEl.style.flex = 'none';
+      textEl.style.overflow = 'visible';
+      textEl.style.height = 'auto';
+      document.body.appendChild(probe);
+      const textHeight = Math.ceil(textEl.getBoundingClientRect().height);
+      probe.remove();
+      // Altura limpia: texto + espacio visual inferior para las acciones, sin reservar
+      // el espacio de los controles que solo existen durante la edición.
+      return Math.max(70, textHeight + 32);
+    }
+
+    async function saveEditNote(id) {
       const input = document.getElementById(`note-edit-input-${id}`);
       const text = input ? input.value.trim() : '';
       if (!text) return;
       const card = document.getElementById(`note-card-edit-${id}`);
+      const existingNote = stickyNotes.find(x => x.id === id);
+      const wasManuallySized = !!(existingNote && existingNote.manualSize === true);
+      const width = card ? card.offsetWidth : (typeof noteDraft.width === 'number' ? noteDraft.width : NOTE_W);
+      const finalHeight = measureFinalStickyNoteHeight(
+        text,
+        width,
+        noteDraft.palette,
+        noteDraft.color,
+        noteDraft.opacity,
+        noteDraft.lineOpacity,
+        noteDraft.font
+      );
       const updateData = {
         text,
         palette: noteDraft.palette,
         color: noteDraft.color,
         opacity: noteDraft.opacity,
         lineOpacity: noteDraft.lineOpacity,
-        font: noteDraft.font
+        font: noteDraft.font,
+        width,
+        height: wasManuallySized ? Math.round(card ? card.offsetHeight : finalHeight) : finalHeight,
+        manualSize: wasManuallySized
       };
-      if (card) {
-        // La nota de texto debe guardar únicamente la altura necesaria para su contenido,
-        // no la altura temporal que pudo tener durante la edición. Igual que una nota-tabla,
-        // se ajusta justo hasta donde termina el contenido + sus controles.
-        if (input) {
-          input.style.height = 'auto';
-          const textHeight = Math.max(60, input.scrollHeight);
-          const fixedControls = Array.from(card.children)
-            .filter(el => el !== input && !el.classList.contains('sticky-note-resize-handle'))
-            .reduce((sum, el) => sum + el.offsetHeight, 0);
-          const fittedHeight = Math.max(120, textHeight + fixedControls + 28);
-          card.style.height = fittedHeight + 'px';
-        }
-        updateData.width = card.offsetWidth;
-        updateData.height = card.offsetHeight;
-      }
-      // Se cierra de inmediato para que la tarjeta se vea guardada al instante,
-      // sin esperar a que llegue la confirmación de Firestore.
+
       editingNoteId = null;
       renderStickyNotes();
       try {
