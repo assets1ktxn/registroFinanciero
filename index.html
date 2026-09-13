@@ -2420,6 +2420,44 @@
     .kia-mic-query-item-detail { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.5); margin: 2px 0 0; }
     .kia-mic-query-empty { font-size: 12.5px; font-weight: 400; color: rgba(255,255,255,0.5); padding: 8px 2px; }
 
+    /* ===== Resumen visual de saldos después de un movimiento ===== */
+    .movement-balance-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-top: 8px;
+    }
+    .movement-balance-total {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 13px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, rgba(0,240,255,0.10), rgba(112,0,255,0.13));
+      border: 1px solid rgba(0,240,255,0.24);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 6px 18px rgba(0,0,0,0.16);
+    }
+    .movement-balance-total-label { display:flex; align-items:center; gap:8px; min-width:0; }
+    .movement-balance-total-label .emoji { font-size:18px; }
+    .movement-balance-total-label .label { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:rgba(255,255,255,.64); }
+    .movement-balance-total-value { font-size:16px; font-weight:900; color:#fff; white-space:nowrap; }
+    .movement-balance-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+    .movement-balance-card {
+      display:flex; align-items:center; gap:8px; min-width:0;
+      padding:9px 10px; border-radius:13px;
+      background:rgba(255,255,255,0.035);
+      border:1px solid rgba(255,255,255,0.075);
+    }
+    .movement-balance-card.affected { border-color:rgba(0,240,255,0.28); background:rgba(0,240,255,0.055); }
+    .movement-balance-card.debt { border-color:rgba(255,72,120,0.20); }
+    .movement-balance-icon { width:28px; height:28px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.06); flex-shrink:0; font-size:16px; }
+    .movement-balance-info { min-width:0; flex:1; }
+    .movement-balance-name { font-size:10.5px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .movement-balance-kind { font-size:8.5px; color:rgba(255,255,255,.42); margin-top:1px; }
+    .movement-balance-amount { font-size:11px; font-weight:900; color:rgba(255,255,255,.92); white-space:nowrap; }
+    @media (max-width:420px) { .movement-balance-grid { grid-template-columns:1fr; } }
+
     /* Botones de editar/eliminar de cada resultado mostrado por voz. */
     .kia-mic-query-item-actions {
       display: flex;
@@ -7131,7 +7169,7 @@
     // actualizado. Simula el movimiento sobre una copia local para no depender de que
     // Firestore ya haya propagado el cambio.
     function buildMovementSavedSummary(newMovementData, oldMovementId) {
-      if (!newMovementData.accountId) return null; // Eventos u otros movimientos sin cuenta
+      if (!newMovementData.accountId) return null;
 
       const projected = oldMovementId
         ? movements.map(m => m.id === oldMovementId ? { ...m, ...newMovementData } : m)
@@ -7141,22 +7179,34 @@
       if (!originAcc) return null;
 
       const title = oldMovementId ? '✅ ¡Actualizado!' : '✅ ¡Registrado!';
-      const originLabel = balanceLabelFor(originAcc, computeBalanceFromMovements(originAcc.id, projected));
-      const totalLabel = formatCurrency(computeTotalWalletsFromMovements(projected));
-      const totalLine = `💰 Total en tus carteras: ${totalLabel}`;
+      const accountRows = accounts.map(acc => {
+        const balance = computeBalanceFromMovements(acc.id, projected);
+        return {
+          id: acc.id,
+          name: acc.name || 'Cuenta',
+          emoji: acc.emoji || (acc.accountType === 'credito' ? '💳' : '💰'),
+          isCredit: acc.accountType === 'credito',
+          affected: acc.id === newMovementData.accountId || acc.id === newMovementData.toAccountId,
+          label: balanceLabelFor(acc, balance),
+          balance
+        };
+      });
 
-      if (newMovementData.toAccountId) {
-        const destAcc = accounts.find(a => a.id === newMovementData.toAccountId);
-        if (destAcc) {
-          const destLabel = balanceLabelFor(destAcc, computeBalanceFromMovements(destAcc.id, projected));
-          return {
-            title,
-            text: `${originAcc.emoji} ${originAcc.name} quedó con ${originLabel}  ·  ${destAcc.emoji} ${destAcc.name} quedó con ${destLabel}  ·  ${totalLine}`
-          };
-        }
-      }
+      const totalWallets = computeTotalWalletsFromMovements(projected);
+      const destAcc = newMovementData.toAccountId ? accounts.find(a => a.id === newMovementData.toAccountId) : null;
+      const originRow = accountRows.find(a => a.id === originAcc.id);
+      const destRow = destAcc ? accountRows.find(a => a.id === destAcc.id) : null;
+      let voiceText = `${originAcc.emoji || '💰'} ${originAcc.name} quedó con ${originRow ? originRow.label : ''}`;
+      if (destRow && destAcc) voiceText += ` · ${destAcc.emoji || '💰'} ${destAcc.name} quedó con ${destRow.label}`;
+      voiceText += ` · 💰 Total en tus carteras: ${formatCurrency(totalWallets)}`;
 
-      return { title, text: `${originAcc.emoji} ${originAcc.name} quedó con ${originLabel}  ·  ${totalLine}` };
+      return {
+        title,
+        text: voiceText,
+        accounts: accountRows,
+        totalWallets,
+        affectedAccountIds: [newMovementData.accountId, newMovementData.toAccountId].filter(Boolean)
+      };
     }
 
     function updateSubcategorySelectors() {
@@ -7550,6 +7600,64 @@
       const nameInput = document.getElementById('new-acc-name');
       if (emojiInput) emojiInput.value = emoji;
       if (nameInput) nameInput.value = name;
+    }
+
+    function showMovementSavedSummary(summary) {
+      if (!summary) return;
+      const confirmTitle = document.getElementById('confirm-title');
+      const confirmText = document.getElementById('confirm-text');
+      const confirmIconBox = document.getElementById('confirm-icon-box');
+      const confirmIcon = document.getElementById('confirm-icon');
+      const actionBtn = document.getElementById('confirm-action-btn');
+
+      if (confirmTitle) confirmTitle.textContent = summary.title || '✅ Movimiento registrado';
+      if (actionBtn) actionBtn.classList.add('hidden');
+      if (confirmIconBox) {
+        confirmIconBox.className = 'inline-flex p-3 bg-[#00f0ff]/10 text-[#00f0ff] rounded-2xl border border-[#00f0ff]/20';
+      }
+      if (confirmIcon) confirmIcon.setAttribute('data-lucide', 'wallet-cards');
+
+      const accountsHtml = (summary.accounts || []).map(acc => {
+        const isDebt = acc.isCredit && Number(acc.balance) > 0;
+        const safeName = escapeHtml(acc.name);
+        const safeEmoji = escapeHtml(acc.emoji);
+        const safeAmount = escapeHtml(acc.label || formatCurrency(acc.balance));
+        const kind = acc.isCredit ? 'Tarjeta de crédito' : 'Saldo disponible';
+        const classes = ['movement-balance-card'];
+        if (acc.affected) classes.push('affected');
+        if (isDebt) classes.push('debt');
+        return `<div class="${classes.join(' ')}">
+          <div class="movement-balance-icon">${safeEmoji}</div>
+          <div class="movement-balance-info">
+            <div class="movement-balance-name">${safeName}</div>
+            <div class="movement-balance-kind">${kind}</div>
+          </div>
+          <div class="movement-balance-amount">${safeAmount}</div>
+        </div>`;
+      }).join('');
+
+      if (confirmText) {
+        confirmText.innerHTML = `
+          <div class="movement-balance-summary">
+            <div class="movement-balance-total">
+              <div class="movement-balance-total-label"><span class="emoji">💰</span><span class="label">Total en tus carteras</span></div>
+              <div class="movement-balance-total-value">${escapeHtml(formatCurrency(summary.totalWallets || 0))}</div>
+            </div>
+            <div class="movement-balance-grid">${accountsHtml}</div>
+          </div>`;
+      }
+      confirmCallback = null;
+      confirmOnCloseCallback = null;
+      lucide.createIcons();
+      const modalElement = document.getElementById('confirm-modal');
+      const content = document.getElementById('confirm-content');
+      if (modalElement && content) {
+        modalElement.classList.remove('hidden');
+        setTimeout(() => {
+          modalElement.classList.remove('opacity-0');
+          content.classList.remove('scale-95');
+        }, 10);
+      }
     }
 
     function showConfirm(title, text, callback, isAlert = false, onClose = null) {
@@ -9704,7 +9812,7 @@
           }
           closeModal();
           if (savedBalanceSummary) {
-            showConfirm(savedBalanceSummary.title, savedBalanceSummary.text, null, true);
+            showMovementSavedSummary(savedBalanceSummary);
           }
         } catch (error) {
           console.error("Error al guardar/actualizar:", error);
@@ -11637,28 +11745,43 @@
     }
 
     function findKiaSubcategory(t, type) {
+      const normalized = stripAccentsKia(t || '').toLowerCase();
+      const dynamic = (customSubcategories && customSubcategories.length ? customSubcategories : DEFAULT_SUBCATEGORIES)
+        .filter(s => s.type === type);
+
+      // Primero intenta encontrar las subcategorías reales creadas en la app.
+      let bestDynamic = null;
+      let bestScore = 0;
+      dynamic.forEach(sub => {
+        const name = stripAccentsKia(sub.name || '').toLowerCase();
+        if (!name) return;
+        const tokens = name.split(/\s+/).filter(w => w.length >= 3);
+        let score = normalized.includes(name) ? 100 : 0;
+        tokens.forEach(tok => { if (normalized.includes(tok)) score += tok.length >= 5 ? 8 : 5; });
+        if (score > bestScore) { bestScore = score; bestDynamic = sub.name; }
+      });
+      if (bestDynamic && bestScore >= 5) return bestDynamic;
+
       const dictionaries = {
         gasto: [
-          { keys: ['comida', 'comi', 'restaurante', 'tacos', 'super', 'supermercado', 'cafe', 'desayuno', 'almuerzo', 'cena', 'antojo'], name: 'Comida' },
-          { keys: ['uber', 'taxi', 'gasolina', 'camion', 'metro', 'transporte', 'autobus', 'pasaje', 'didi'], name: 'Transporte' },
-          { keys: ['luz', 'agua', 'internet', 'renta', 'netflix', 'servicio', 'telefono', 'celular'], name: 'Servicios' },
-          { keys: ['cine', 'boleto', 'juego', 'diversion', 'concierto', 'salida', 'peli'], name: 'Diversión' },
-          { keys: ['ropa', 'zapatos', 'amazon', 'compras', 'tienda'], name: 'Compras' }
+          { keys: ['comida','comi','restaurante','taco','tacos','super','supermercado','cafe','desayuno','almuerzo','cena','antojo','hamburguesa','pizza'], name: 'Comida' },
+          { keys: ['uber','taxi','gasolina','camion','metro','transporte','autobus','pasaje','didi','combustible','estacionamiento'], name: 'Transporte' },
+          { keys: ['luz','agua','internet','renta','netflix','servicio','telefono','celular','electricidad','gas'], name: 'Servicios' },
+          { keys: ['cine','boleto','juego','videojuego','diversion','concierto','salida','peli','pelicula','streaming'], name: 'Diversión' },
+          { keys: ['ropa','zapatos','amazon','compras','tienda','mercado','regalo'], name: 'Compras' }
         ],
         ingreso: [
-          { keys: ['sueldo', 'salario', 'nomina', 'quincena'], name: 'Sueldo' },
-          { keys: ['inversion', 'dividendo', 'accion', 'cripto'], name: 'Inversiones' },
-          { keys: ['regalo', 'aguinaldo'], name: 'Regalos' }
+          { keys: ['sueldo','salario','nomina','quincena','pago de nomina'], name: 'Sueldo' },
+          { keys: ['inversion','inversiones','dividendo','accion','acciones','cripto','rendimiento'], name: 'Inversiones' },
+          { keys: ['regalo','aguinaldo','bono','premio'], name: 'Regalos' }
         ],
         ahorro: [
-          { keys: ['emergencia', 'fondo'], name: 'Fondo Emergencias' },
-          { keys: ['viaje', 'vacacion'], name: 'Viajes' }
+          { keys: ['emergencia','fondo','imprevisto'], name: 'Fondo Emergencias' },
+          { keys: ['viaje','vacacion','vacaciones','turismo'], name: 'Viajes' }
         ]
       };
       const list = dictionaries[type] || [];
-      for (const entry of list) {
-        if (entry.keys.some(k => t.includes(k))) return entry.name;
-      }
+      for (const entry of list) if (entry.keys.some(k => normalized.includes(k))) return entry.name;
       return null;
     }
 
@@ -11667,41 +11790,35 @@
     const KIA_ACCOUNT_STOPWORDS = ['de', 'la', 'el', 'los', 'las', 'mi', 'mis', 'con', 'tarjeta', 'cuenta', 'banco', 'del'];
 
     function findKiaAccount(t) {
-      // Separa nombres compuestos "pegados" (ej. "MercadoLibre") en sus palabras
-      // reales ("Mercado Libre") usando el cambio de minúscula a mayúscula como
-      // límite de palabra. Esto es clave porque el usuario dice esas palabras
-      // por separado al hablar ("gasté en mercado libre"), aunque el nombre
-      // guardado no tenga espacio. Debe ir ANTES de pasar a minúsculas, porque
-      // el patrón depende de la diferencia entre mayúsculas y minúsculas.
-      function splitCompoundWords(name) {
-        return stripAccentsKia(name).replace(/([a-z0-9])([A-Z])/g, '$1 $2');
-      }
+      const normalized = stripAccentsKia(t || '').toLowerCase();
+      const splitCompoundWords = name => stripAccentsKia(name || '').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+      const compact = normalized.replace(/[^a-z0-9]+/g, '');
 
-      // 1) Coincidencia por palabras distintivas: se evalúa PRIMERO por ser la más
-      // específica (ej. "con mi tarjeta Nu" -> "Nu Bank Crédito"). Esto también
-      // evita que una cuenta genérica como "Tarjeta" o "Banco" se quede con el
-      // match solo por aparecer su nombre dentro del texto, cuando el usuario en
-      // realidad mencionó una cuenta más específica (ej. "pagué con mi tarjeta
-      // BBVA" debe reconocer "BBVA", no la cuenta genérica "Tarjeta" — "tarjeta"
-      // está en las palabras vacías, "bbva" no). De paso cubre nombres compuestos
-      // como "MercadoLibre" -> "mercado" + "libre", sin importar si el usuario
-      // los dice pegados o separados.
-      let best = null;
-      let bestScore = 0;
+      const aliasMap = {
+        'efectivo': ['cash','efectivo','mano'],
+        'tarjeta': ['tarjeta','tdc','credito','credit card'],
+        'banco': ['banco','cuenta bancaria'],
+        'mercadolibre': ['mercadolibre','mercado libre','mercado'],
+        'nu': ['nu'], 'bbva': ['bbva'], 'santander': ['santander'], 'banorte': ['banorte'],
+        'paypal': ['paypal'], 'oxxo': ['oxxo']
+      };
+
+      let best = null, bestScore = 0;
       accounts.forEach(a => {
-        const words = splitCompoundWords(a.name).toLowerCase().split(/\s+/).filter(w => w.length >= 3 && !KIA_ACCOUNT_STOPWORDS.includes(w));
+        const name = splitCompoundWords(a.name).toLowerCase();
+        const nameCompact = name.replace(/[^a-z0-9]+/g, '');
+        const words = name.split(/\s+/).filter(w => w.length >= 2 && !KIA_ACCOUNT_STOPWORDS.includes(w));
         let score = 0;
-        words.forEach(w => { if (t.includes(w)) score++; });
+        if (name && normalized.includes(name)) score += 100;
+        if (nameCompact && compact.includes(nameCompact)) score += 45;
+        words.forEach(w => { if (normalized.includes(w)) score += w.length >= 5 ? 12 : 7; });
+        Object.entries(aliasMap).forEach(([key, aliases]) => {
+          if (nameCompact.includes(key) || name.includes(key)) aliases.forEach(al => { if (normalized.includes(al)) score += 18; });
+        });
+        if (a.accountType === 'credito' && /tarjeta|tdc|credito|credit/.test(normalized)) score += 5;
         if (score > bestScore) { bestScore = score; best = a; }
       });
-      if (best) return best;
-
-      // 2) Nombre completo tal cual: rescata cuentas cuyo nombre entero cae en las
-      // palabras vacías del paso anterior (ej. la cuenta genérica "Tarjeta" o
-      // "Banco"), para cuando el usuario solo dijo eso y nada más específico.
-      const exact = accounts.find(a => t.includes(splitCompoundWords(a.name).toLowerCase()));
-      if (exact) return exact;
-
+      if (best && bestScore > 0) return best;
       return accounts.find(a => a.isDefault) || accounts[0] || null;
     }
 
@@ -12601,7 +12718,10 @@
         'quiero ver', 'ver mi', 'ver el', 'ver la', 'ver los', 'ver las',
         'cuanto tengo', 'cuanto gaste', 'cuanto he gastado', 'cuanto llevo',
         'que tengo en', 'que hay en', 'cuanto he ahorrado', 'cuanto he ingresado',
-        'como voy', 'como van mis',
+        'cuanto debo', 'cuanto me queda', 'cuanto queda', 'en que gaste', 'en que he gastado',
+        'mis ultimos movimientos', 'ultimo movimiento', 'ultimo gasto', 'ultimos gastos',
+        'ultimo ingreso', 'ultimos ingresos', 'ultimos ahorros', 'mis cuentas', 'mis saldos',
+        'como voy', 'como van mis', 'que hice hoy', 'que hice ayer', 'que movimientos hice',
         'elimina', 'eliminame', 'borra', 'borrame', 'quita', 'quitame',
         'modifica', 'modificame', 'cambia', 'cambiame', 'actualiza', 'actualizame',
         'corrige', 'corrigeme', 'edita', 'editame'
@@ -12613,8 +12733,8 @@
         else if (has(['nota', 'notas'])) queryCategory = 'nota';
         else if (has(['tarea', 'tareas', 'recordatorio', 'recordatorios', 'pendiente', 'pendientes'])) queryCategory = 'tarea';
         else if (has(['evento', 'eventos', 'cita', 'citas'])) queryCategory = 'evento';
-        else if (has(['pago de tarjeta', 'pago tarjeta', 'tarjeta de credito', 'tdc', 'pago tc'])) queryCategory = 'pago_tc';
-        else if (has(['cuenta', 'cuentas', 'saldo', 'balance'])) queryCategory = 'cuenta';
+        else if (has(['pago de tarjeta', 'pago tarjeta', 'pague la tarjeta', 'pague mi tarjeta', 'abono a tarjeta', 'tarjeta de credito', 'tdc', 'pago tc'])) queryCategory = 'pago_tc';
+        else if (has(['cuenta', 'cuentas', 'saldo', 'saldos', 'balance', 'dinero en', 'cuanto queda en'])) queryCategory = 'cuenta';
         else if (has(['gasto', 'gastos', 'gaste', 'gastado', 'gastados', 'compra', 'compras'])) queryCategory = 'gasto';
         else if (has(['ingreso', 'ingresos', 'ingresado', 'ingresados'])) queryCategory = 'ingreso';
         else if (has(['ahorro', 'ahorros', 'ahorrado', 'ahorrados'])) queryCategory = 'ahorro';
@@ -12643,7 +12763,7 @@
           .replace(/\bmuestr[a-z]*\b/g, ' ')
           .replace(/\bensen[a-z]*\b/g, ' ')
           .replace(/\b(checame|checa|revisame|revisa|buscame|busca|encuentrame|encuentra|dime|mostrar|quiero|ver|elimina|eliminame|borra|borrame|quita|quitame|modifica|modificame|cambia|cambiame|actualiza|actualizame|corrige|corrigeme|edita|editame)\b/g, ' ')
-          .replace(/\b(el|la|los|las|un|una|unos|unas|de|del|mi|mis|que|se|me|tengo|hoy|ayer|esta|semana|este|mes|registro|registros|movimiento|movimientos|nota|notas|tarea|tareas|recordatorio|recordatorios|pendiente|pendientes|evento|eventos|cita|citas|gasto|gastos|gaste|gastado|gastados|compra|compras|ingreso|ingresos|ingresado|ingresados|ahorro|ahorros|ahorrado|ahorrados|diecast|diecasts|die|cast|dai|daicast|casting|castings|coleccion|boveda|cuenta|cuentas|saldo|balance|pago|tarjeta|credito|tdc|ultimo|ultima|ultimos|ultimas|reciente|recientes|todo|toda|todos|todas|algun|alguna|algunos|algunas|tipo|cuanto|cuanta|cuantos|cuantas|como|voy|llevo|he|has|hay|favor|porfa|por|en|con|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|20\d{2})\b/g, ' ')
+          .replace(/\b(el|la|los|las|un|una|unos|unas|de|del|mi|mis|que|se|me|tengo|hoy|ayer|esta|semana|este|mes|registro|registros|movimiento|movimientos|nota|notas|tarea|tareas|recordatorio|recordatorios|pendiente|pendientes|evento|eventos|cita|citas|gasto|gastos|gaste|gastado|gastados|compra|compras|ingreso|ingresos|ingresado|ingresados|ahorro|ahorros|ahorrado|ahorrados|diecast|diecasts|die|cast|dai|daicast|casting|castings|coleccion|boveda|cuenta|cuentas|saldo|balance|pago|tarjeta|credito|tdc|ultimo|ultima|ultimos|ultimas|reciente|recientes|todo|toda|todos|todas|algun|alguna|algunos|algunas|tipo|cuanto|cuanta|cuantos|cuantas|como|voy|llevo|he|has|hay|favor|porfa|por|en|con|queda|quedo|tengo|dinero|debo|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|20\d{2})\b/g, ' ')
           .replace(/\s{2,}/g, ' ')
           .trim();
 
