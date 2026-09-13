@@ -10860,8 +10860,10 @@
         if (isEditingThis) {
           const w = (typeof n.width === 'number') ? n.width : NOTE_W;
           const textLines = String(n.text || '').split('\n').length;
-          const estimatedTextHeight = Math.max(105, Math.min(420, 36 + textLines * 21));
-          const h = (typeof n.height === 'number') ? Math.max(n.height, estimatedTextHeight + 105) : Math.max(280, estimatedTextHeight + 105);
+          const estimatedTextHeight = Math.max(60, Math.min(420, 36 + textLines * 21));
+          // En edición solo usamos el alto guardado como mínimo; no lo
+          // volvemos a inflar indefinidamente cada vez que se abre.
+          const h = (typeof n.height === 'number') ? Math.max(n.height, estimatedTextHeight + 55) : Math.max(150, estimatedTextHeight + 55);
           const sizeStyle = `width:${w}px; height:${h}px;`;
           const style = buildItemStyle(noteDraft.palette, noteDraft.color, noteDraft.opacity, 'note', noteDraft.lineOpacity, noteDraft.font) + posStyle + sizeStyle;
           container.innerHTML += `
@@ -11384,9 +11386,21 @@
         opacity: tableNoteDraft.opacity,
         font: tableNoteDraft.font
       };
-      if (card) {
+      if (card && input) {
+        // Al guardar, recalcula el tamaño NATURAL según el texto actual.
+        // No reutilizamos la altura temporal de edición, porque puede haberse
+        // inflado para que cupieran los controles mientras se escribía.
+        input.style.height = 'auto';
+        const textHeight = Math.max(42, input.scrollHeight);
+        input.style.height = textHeight + 'px';
+
+        const fixedControls = Array.from(card.children)
+          .filter(el => el !== input && !el.classList.contains('sticky-note-resize-handle'))
+          .reduce((sum, el) => sum + el.offsetHeight, 0);
+        const naturalHeight = Math.max(76, textHeight + fixedControls + 18);
+
         updateData.width = card.offsetWidth;
-        updateData.height = card.offsetHeight;
+        updateData.height = naturalHeight;
       }
       editingTableNoteId = null;
       renderStickyNotes();
@@ -12690,7 +12704,7 @@
       if (!textarea) return;
       textarea.style.height = 'auto';
       const styles = window.getComputedStyle(textarea);
-      const minHeight = parseFloat(styles.minHeight) || 105;
+      const minHeight = parseFloat(styles.minHeight) || 60;
       const maxHeight = parseFloat(styles.maxHeight) || 420;
       const nextHeight = Math.max(minHeight, Math.min(maxHeight, textarea.scrollHeight));
       textarea.style.height = nextHeight + 'px';
