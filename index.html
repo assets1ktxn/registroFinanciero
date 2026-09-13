@@ -400,6 +400,36 @@
       box-shadow: 4px 0 0 0 #00f0ff inset !important;
     }
 
+    /* ===== SELECTOR DE COLOR NEÓN PARA TARJETAS DE CUENTA (crear/editar) =====
+       Cada botón es un círculo con el color de fondo Y un resplandor (glow) del
+       mismo tono, para que se note que es un color "neón". El seleccionado se
+       marca con un anillo blanco. */
+    .acc-color-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: var(--swatch-color);
+      box-shadow: 0 0 9px 1px var(--swatch-color);
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .acc-color-swatch:hover { transform: scale(1.12); }
+    .acc-color-swatch.acc-color-selected {
+      border-color: #fff;
+      transform: scale(1.15);
+    }
+    .acc-color-swatch-none {
+      background: #1f2937;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .acc-color-swatch-none i { pointer-events: none; }
+
     /* ===== SELECTOR DE COLOR Y TRANSPARENCIA (Notas y Tareas) ===== */
     .item-color-picker {
       margin-top: 6px;
@@ -3741,6 +3771,23 @@
             </div>
           </div>
 
+          <!-- Color Neón de la Tarjeta (transparente): se aplica en la tarjeta de la sección principal -->
+          <div class="space-y-2 pt-1 border-t border-gray-800/40 mt-3">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Color de la Tarjeta (Neón)</label>
+            <div id="acc-color-picker" class="flex flex-wrap items-center gap-2.5">
+              <button type="button" data-acc-color="" onclick="window.selectAccountCardColor('')" title="Sin color" class="acc-color-swatch acc-color-swatch-none acc-color-selected">
+                <i data-lucide="slash" class="w-3.5 h-3.5 text-gray-500"></i>
+              </button>
+              <button type="button" data-acc-color="#00f0ff" onclick="window.selectAccountCardColor('#00f0ff')" title="Cian" class="acc-color-swatch" style="--swatch-color:#00f0ff;"></button>
+              <button type="button" data-acc-color="#7000ff" onclick="window.selectAccountCardColor('#7000ff')" title="Púrpura" class="acc-color-swatch" style="--swatch-color:#7000ff;"></button>
+              <button type="button" data-acc-color="#ff007f" onclick="window.selectAccountCardColor('#ff007f')" title="Rosa" class="acc-color-swatch" style="--swatch-color:#ff007f;"></button>
+              <button type="button" data-acc-color="#10b981" onclick="window.selectAccountCardColor('#10b981')" title="Esmeralda" class="acc-color-swatch" style="--swatch-color:#10b981;"></button>
+              <button type="button" data-acc-color="#f59e0b" onclick="window.selectAccountCardColor('#f59e0b')" title="Ámbar" class="acc-color-swatch" style="--swatch-color:#f59e0b;"></button>
+              <button type="button" data-acc-color="#faff00" onclick="window.selectAccountCardColor('#faff00')" title="Amarillo" class="acc-color-swatch" style="--swatch-color:#faff00;"></button>
+              <input type="hidden" id="new-acc-card-color" value="">
+            </div>
+          </div>
+
           <!-- Fechas de Corte / Límite de Pago (solo Crédito) NUEVO -->
           <div id="credito-dates-fields" class="space-y-3 pt-2 border-t border-gray-800/40 mt-1 hidden">
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fechas de la Tarjeta</label>
@@ -6821,8 +6868,15 @@
           ? `<span class="text-[9px] font-bold text-rose-450 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded mt-1 uppercase block w-max">Crédito</span>` 
           : '';
 
+        // Si la cuenta tiene un color neón asignado, se pinta la tarjeta con ese tono
+        // muy transparente (fondo y borde) más un resplandor sutil a su alrededor.
+        // Sin color asignado, se queda con el gris por defecto de siempre.
+        const cardColorStyle = acc.cardColor
+          ? `style="background:${hexToRgba(acc.cardColor, 0.14)}; border-color:${hexToRgba(acc.cardColor, 0.55)}; box-shadow:0 0 16px -4px ${hexToRgba(acc.cardColor, 0.6)};"`
+          : '';
+
         deck.innerHTML += `
-          <div data-account-id="${acc.id}" onclick="window.openAccountDetails('${acc.id}')" class="relative bg-gray-900/40 p-4 rounded-xl border border-gray-800 shadow-md cursor-pointer hover:scale-[1.03] active:scale-[0.98] hover:border-[#00f0ff]/30 transition-all duration-300">
+          <div data-account-id="${acc.id}" onclick="window.openAccountDetails('${acc.id}')" ${cardColorStyle} class="relative bg-gray-900/40 p-4 rounded-xl border border-gray-800 shadow-md cursor-pointer hover:scale-[1.03] active:scale-[0.98] hover:border-[#00f0ff]/30 transition-all duration-300">
             <span data-drag-handle onclick="event.stopPropagation()" class="account-card-tape" title="Arrastra para reordenar"></span>
             <div class="flex items-center gap-2 mb-2">
               <span class="text-xl p-1.5 bg-gray-950 rounded-lg flex-shrink-0">${acc.emoji}</span>
@@ -7247,6 +7301,7 @@
       clearDayPickerValue('new-acc-cutoff-day', 'new-acc-cutoff-day-label', 'Elegir día', 'cutoff-day-picker-panel');
       clearDayPickerValue('new-acc-due-day', 'new-acc-due-day-label', 'Elegir día', 'due-day-picker-panel');
       if (dueColor) dueColor.value = '#ff007f';
+      selectAccountCardColor('');
       if (btn) btn.textContent = "+ Agregar Cuenta";
       if (cancelBtn) cancelBtn.classList.add('hidden');
       toggleCreditoDatesFields();
@@ -7272,6 +7327,17 @@
     document.querySelectorAll('input[name="acc-type"]').forEach(radio => {
       radio.addEventListener('change', toggleCreditoDatesFields);
     });
+
+    // Marca visualmente la muestra de color elegida (anillo blanco) y guarda el hex
+    // en el input oculto que se lee al guardar la cuenta. hex === '' significa
+    // "sin color", es decir, la tarjeta se queda con su apariencia gris por defecto.
+    function selectAccountCardColor(hex) {
+      const input = document.getElementById('new-acc-card-color');
+      if (input) input.value = hex;
+      document.querySelectorAll('#acc-color-picker .acc-color-swatch').forEach(btn => {
+        btn.classList.toggle('acc-color-selected', btn.getAttribute('data-acc-color') === hex);
+      });
+    }
 
     // ===== Selector flotante tipo calendario (día 1-31) para Día de Corte y
     // Día Límite de Pago de tarjetas de crédito =====
@@ -7587,6 +7653,7 @@
         clearDayPickerValue('new-acc-due-day', 'new-acc-due-day-label', 'Elegir día', 'due-day-picker-panel');
       }
       if (dueColor) dueColor.value = acc.paymentDueColor || '#ff007f';
+      selectAccountCardColor(acc.cardColor || '');
       if (btn) btn.textContent = "Actualizar Cuenta";
       if (cancelBtn) cancelBtn.classList.remove('hidden');
       toggleCreditoDatesFields();
@@ -7607,6 +7674,7 @@
         const cutoffDayInput = document.getElementById('new-acc-cutoff-day');
         const dueDayInput = document.getElementById('new-acc-due-day');
         const dueColorInput = document.getElementById('new-acc-due-color');
+        const cardColorInput = document.getElementById('new-acc-card-color');
 
         const emoji = emojiInput ? emojiInput.value.trim() : '💳';
         const name = nameInput ? nameInput.value.trim() : '';
@@ -7624,6 +7692,7 @@
           ? Math.min(31, Math.max(1, parseInt(dueDayInput.value, 10))) : null;
         const paymentDueColor = (accountType === 'credito' && dueColorInput)
           ? dueColorInput.value : null;
+        const cardColor = (cardColorInput && cardColorInput.value) ? cardColorInput.value : null;
 
         if (!name) return;
 
@@ -7658,7 +7727,8 @@
                 accountType: accountType,
                 cutoffDay: cutoffDay,
                 paymentDueDay: paymentDueDay,
-                paymentDueColor: paymentDueColor
+                paymentDueColor: paymentDueColor,
+                cardColor: cardColor
               });
             } else {
               await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'accounts', editingAccountId), {
@@ -7669,7 +7739,8 @@
                 accountType: accountType,
                 cutoffDay: cutoffDay,
                 paymentDueDay: paymentDueDay,
-                paymentDueColor: paymentDueColor
+                paymentDueColor: paymentDueColor,
+                cardColor: cardColor
               });
             }
             
@@ -7691,6 +7762,7 @@
               cutoffDay: cutoffDay,
               paymentDueDay: paymentDueDay,
               paymentDueColor: paymentDueColor,
+              cardColor: cardColor,
               timestamp: new Date().toISOString()
             });
 
@@ -13098,6 +13170,7 @@
     window.openAccountManager = openAccountManager;
     window.closeAccountManager = closeAccountManager;
     window.applyBrandTemplate = applyBrandTemplate;
+    window.selectAccountCardColor = selectAccountCardColor;
     window.toggleDayPicker = toggleDayPicker;
     window.clearDayPickerValue = clearDayPickerValue;
     window.showConfirm = showConfirm;
