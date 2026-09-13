@@ -414,53 +414,66 @@
       color: inherit;
       padding: 2px 3px;
     }
-    /* Columna angosta de acciones (borrar fila/columna, agregar columna) dentro de la tabla
-       en edición. Su ancho fijo lo define el <colgroup> generado por tableNoteColgroupHtml(),
-       así no le quita espacio a las columnas de datos. */
-    .sticky-note-table-el td.table-note-action-cell {
-      border: none;
-      padding: 1px !important;
-      min-width: 0;
-      text-align: center;
-      vertical-align: middle;
+    /* Grilla editable de la nota-tabla: se arma con CSS Grid (en vez de <table>) para que el
+       número de columnas y la columna angosta de acciones se vean igual en cualquier
+       navegador o tamaño de pantalla. grid-template-columns se fija en línea al dibujarla
+       (ver tableNoteEditGridHtml/refreshTableNoteGrid). */
+    .table-note-grid {
+      display: grid;
+      gap: 3px;
+      font-family: var(--item-font, 'Comic Sans MS', 'Segoe Print', cursive, ui-sans-serif, sans-serif);
     }
-    .table-note-actions-row td { border: none; }
+    .table-note-cell { min-width: 0; }
+    .table-note-cell .sticky-note-table-cell-input {
+      box-sizing: border-box;
+      border: 1px solid rgba(0,0,0,0.2);
+      border-radius: 3px;
+    }
+    .table-note-action-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .table-note-mini-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 15px;
-      height: 15px;
+      width: 20px;
+      height: 20px;
       padding: 0;
       border: none;
-      border-radius: 4px;
-      background: rgba(0,0,0,0.12);
-      color: inherit;
-      opacity: 0.6;
+      border-radius: 5px;
+      background: rgba(0,0,0,0.32);
+      color: #fff;
+      opacity: 0.85;
       cursor: pointer;
+      flex-shrink: 0;
     }
-    .table-note-mini-btn:hover { opacity: 1; background: rgba(0,0,0,0.22); }
+    .table-note-mini-btn:hover { opacity: 1; background: rgba(0,0,0,0.5); }
     .table-note-mini-btn i { pointer-events: none; }
-    .sticky-note-table-el tr.table-note-add-row td {
-      border: none;
-      padding: 3px 0 0 0 !important;
-      text-align: center;
+    .table-note-mini-btn-add { background: rgba(0,110,255,0.6); }
+    .table-note-mini-btn-add:hover { background: rgba(0,110,255,0.8); }
+    .table-note-add-row-cell {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: center;
+      padding-top: 2px;
     }
     .table-note-add-row-btn {
       display: inline-flex;
       align-items: center;
       gap: 3px;
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 10px;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 12px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.3);
-      border: 1px solid rgba(0,0,0,0.2);
+      background: rgba(0,110,255,0.28);
+      border: 1px solid rgba(0,0,0,0.25);
       color: inherit;
-      opacity: 0.85;
+      opacity: 0.9;
       cursor: pointer;
     }
-    .table-note-add-row-btn:hover { opacity: 1; }
+    .table-note-add-row-btn:hover { opacity: 1; background: rgba(0,110,255,0.42); }
     .table-note-add-row-btn i { pointer-events: none; }
 
     /* ===== TARJETAS DE CUENTAS: cuadrícula responsiva con reordenamiento por arrastre =====
@@ -10662,18 +10675,18 @@
           const posStyleT = `position:absolute; left:${pos.x}px; top:${pos.y}px; z-index:${zT};`;
 
           if (isEditingTable) {
-            const wT = (typeof n.width === 'number') ? n.width : 210;
+            const gridT = tableNoteEditGridHtml();
+            const wT = Math.max((typeof n.width === 'number') ? n.width : 210, tableNoteEditWidth(gridT.cols));
             const hT = (typeof n.height === 'number') ? n.height : 240;
-            const sizeStyleT = `width:${wT}px; height:${hT}px;`;
+            // min-height (no height fija): así la tarjeta puede crecer sola al agregar filas,
+            // en vez de quedar comprimida en el tamaño guardado/por defecto (ver tableNoteEditWidth).
+            const sizeStyleT = `width:${wT}px; min-height:${hT}px;`;
             const styleT = buildItemStyle(tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, 'note', 0, tableNoteDraft.font) + posStyleT + sizeStyleT;
             container.innerHTML += `
               <div id="table-note-card-edit-${n.id}" class="sticky-note sticky-note-table sticky-note-editing ${rotClass}" style="${styleT}">
                 <input type="text" id="table-note-title-input-edit-${n.id}" maxlength="60" placeholder="Título" value="${escapeHtml(tableNoteDraft.title)}" class="sticky-note-table-title-input" />
                 <div class="sticky-note-table-wrap">
-                  <table class="sticky-note-table-el sticky-note-table-editable">
-                    ${tableNoteColgroupHtml()}
-                    <tbody id="table-note-grid-body-edit-${n.id}">${tableNoteEditGridHtml()}</tbody>
-                  </table>
+                  <div id="table-note-grid-body-edit-${n.id}" class="table-note-grid" style="grid-template-columns: repeat(${gridT.cols}, minmax(48px, 1fr)) 22px;">${gridT.html}</div>
                 </div>
                 <div id="table-note-picker-edit-${n.id}">${colorPickerHtml('tablenote', tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, undefined, tableNoteDraft.font)}</div>
                 <div class="flex justify-end gap-1 mt-2">
@@ -10695,7 +10708,7 @@
             const sizeStyleT = (typeof n.width === 'number' && typeof n.height === 'number')
               ? `width:${n.width}px; height:${n.height}px;` : '';
             const styleT = buildItemStyle(paletteT, colorT, opacityT, 'note', 0, fontT) + posStyleT + sizeStyleT;
-            const tbl = (Array.isArray(n.table) && n.table.length) ? n.table : [['']];
+            const tbl = tableRowsFromFirestore(n.table);
             container.innerHTML += `
               <div class="sticky-note sticky-note-table ${rotClass}" data-note-id="${n.id}" style="${styleT}">
                 <div class="sticky-note-table-title">${escapeHtml(n.title || 'Sin título')}</div>
@@ -10789,16 +10802,16 @@
 
       if (creatingNewTableNote) {
         const pos = newTableNotePos;
+        const gridN = tableNoteEditGridHtml();
+        const wN = tableNoteEditWidth(gridN.cols);
+        // min-height en vez de height fija: se explica en el mismo lugar para la nota-tabla en edición.
         const style = buildItemStyle(tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, 'note', 0, tableNoteDraft.font) +
-          `position:absolute; left:${pos.x}px; top:${pos.y}px; z-index:${stickyNoteZCounter + 1}; width:210px; height:240px;`;
+          `position:absolute; left:${pos.x}px; top:${pos.y}px; z-index:${stickyNoteZCounter + 1}; width:${wN}px; min-height:240px;`;
         container.innerHTML += `
           <div id="table-note-card-new" class="sticky-note sticky-note-table sticky-note-editing sticky-note-rot-1" style="${style}">
             <input type="text" id="table-note-title-input-new" maxlength="60" placeholder="Título" class="sticky-note-table-title-input" />
             <div class="sticky-note-table-wrap">
-              <table class="sticky-note-table-el sticky-note-table-editable">
-                ${tableNoteColgroupHtml()}
-                <tbody id="table-note-grid-body-new">${tableNoteEditGridHtml()}</tbody>
-              </table>
+              <div id="table-note-grid-body-new" class="table-note-grid" style="grid-template-columns: repeat(${gridN.cols}, minmax(48px, 1fr)) 22px;">${gridN.html}</div>
             </div>
             <div id="table-note-picker-new">${colorPickerHtml('tablenote', tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, undefined, tableNoteDraft.font)}</div>
             <div class="flex justify-end gap-1 mt-2">
@@ -11038,55 +11051,95 @@
     // color/transparencia/tipografía y el mismo arrastre/redimensionado que las notas de
     // texto; solo cambia el contenido (título + tabla) mediante el campo noteType:'table'.
 
-    // Define el ancho de las columnas de la tabla en edición: las columnas de datos se
-    // reparten el espacio por igual, y la última columna (angosta) queda reservada para los
-    // botones de acción (borrar fila/columna, agregar columna) sin quitarles espacio a los datos.
-    function tableNoteColgroupHtml() {
-      const cols = ((tableNoteDraft.table && tableNoteDraft.table[0]) || ['']).length;
-      return `<colgroup>${'<col>'.repeat(cols)}<col style="width:16px"></colgroup>`;
+    // Construye el contenido de la grilla en edición (celdas + botones de acción) a partir
+    // de tableNoteDraft.table. Se arma con CSS Grid en vez de una <table>: una fila superior
+    // con un botón "x" por columna (para borrarla) y el "+" para agregar columna; las filas
+    // de datos, cada una con su botón "x" al final para borrar esa fila; y un botón final
+    // "+ Fila" que abarca todo el ancho. grid-template-columns se fija en línea junto con el
+    // contenido para que el número de columnas de datos y el ancho de la columna de acciones
+    // siempre coincidan con lo que se está dibujando.
+    // Ancho recomendado para la tarjeta de una nota-tabla mientras se crea/edita, según su
+    // número de columnas. Antes la tarjeta se quedaba fija en 210px sin importar cuántas
+    // columnas hubiera, así que cada columna nueva se veía más y más angosta y apachurrada.
+    // Ahora crece ~58px por cada columna extra, hasta un tope que no se salga del panel
+    // (más allá de eso, la cuadrícula se puede desplazar de lado, ver overflow en el CSS).
+    function tableNoteEditWidth(cols) {
+      const BASE_COLS = 2, BASE_W = 210, COL_W = 58;
+      const panel = document.getElementById('sticky-notes-grid');
+      const available = panel ? Math.max(BASE_W, panel.clientWidth - 8) : 460;
+      const maxW = Math.min(460, available);
+      const extra = Math.max(0, (cols || 1) - BASE_COLS) * COL_W;
+      return Math.min(BASE_W + extra, maxW);
     }
 
-    // Construye las filas <tr> de la tabla en edición, a partir de tableNoteDraft.table:
-    // una fila superior con un botón "x" por columna (para borrarla) y el "+" para agregar
-    // columna; las filas de datos, cada una con su botón "x" al final para borrar esa fila;
-    // y una fila final con el botón "+ Fila" que abarca todo el ancho.
     function tableNoteEditGridHtml() {
       const tbl = (tableNoteDraft.table && tableNoteDraft.table.length) ? tableNoteDraft.table : [['']];
       const cols = (tbl[0] || ['']).length;
       const canRemoveRow = tbl.length > 1;
       const canRemoveCol = cols > 1;
 
-      const colHeaderCells = Array.from({ length: cols }).map((_, c) => `<td class="table-note-action-cell">${
-        canRemoveCol ? `<button type="button" class="table-note-mini-btn" onclick="window.removeTableNoteCol(${c})" title="Eliminar esta columna"><i data-lucide="x" class="w-2.5 h-2.5"></i></button>` : ''
-      }</td>`).join('');
-      const colHeaderRow = `<tr class="table-note-actions-row">${colHeaderCells}<td class="table-note-action-cell"><button type="button" class="table-note-mini-btn table-note-mini-btn-add" onclick="window.addTableNoteCol()" title="Agregar columna"><i data-lucide="plus" class="w-2.5 h-2.5"></i></button></td></tr>`;
+      const colHeaderCells = Array.from({ length: cols }).map((_, c) => `<div class="table-note-action-cell">${
+        canRemoveCol ? `<button type="button" class="table-note-mini-btn" onclick="window.removeTableNoteCol(${c})" title="Eliminar esta columna"><i data-lucide="x" class="w-3 h-3"></i></button>` : ''
+      }</div>`).join('');
+      const colHeaderRow = `${colHeaderCells}<div class="table-note-action-cell"><button type="button" class="table-note-mini-btn table-note-mini-btn-add" onclick="window.addTableNoteCol()" title="Agregar columna"><i data-lucide="plus" class="w-3 h-3"></i></button></div>`;
 
       const dataRows = tbl.map((row, r) => {
         const cells = row.map((cell, c) =>
-          `<td><input type="text" class="sticky-note-table-cell-input" value="${escapeHtml(cell || '')}" oninput="window.setTableNoteCell(${r},${c},this.value)" /></td>`
+          `<div class="table-note-cell"><input type="text" class="sticky-note-table-cell-input" value="${escapeHtml(cell || '')}" oninput="window.setTableNoteCell(${r},${c},this.value)" /></div>`
         ).join('');
-        const rowActionCell = `<td class="table-note-action-cell">${
-          canRemoveRow ? `<button type="button" class="table-note-mini-btn" onclick="window.removeTableNoteRow(${r})" title="Eliminar esta fila"><i data-lucide="x" class="w-2.5 h-2.5"></i></button>` : ''
-        }</td>`;
-        return `<tr>${cells}${rowActionCell}</tr>`;
+        const rowActionCell = `<div class="table-note-action-cell">${
+          canRemoveRow ? `<button type="button" class="table-note-mini-btn" onclick="window.removeTableNoteRow(${r})" title="Eliminar esta fila"><i data-lucide="x" class="w-3 h-3"></i></button>` : ''
+        }</div>`;
+        return cells + rowActionCell;
       }).join('');
 
-      const addRowRow = `<tr class="table-note-add-row"><td colspan="${cols + 1}"><button type="button" class="table-note-add-row-btn" onclick="window.addTableNoteRow()" title="Agregar fila"><i data-lucide="plus" class="w-3 h-3"></i>Fila</button></td></tr>`;
+      const addRowRow = `<div class="table-note-add-row-cell"><button type="button" class="table-note-add-row-btn" onclick="window.addTableNoteRow()" title="Agregar fila"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Fila</button></div>`;
 
-      return colHeaderRow + dataRows + addRowRow;
+      return { html: colHeaderRow + dataRows + addRowRow, cols };
     }
 
-    // Reconstruye la cuadrícula completa (filas + colgroup), sin perder el foco del título
-    // ni del selector de color, que viven fuera de este contenedor.
+    // Reconstruye la cuadrícula completa, sin perder el foco del título ni del selector de
+    // color, que viven fuera de este contenedor.
     function refreshTableNoteGrid() {
       const suffix = editingTableNoteId ? `edit-${editingTableNoteId}` : 'new';
       const body = document.getElementById(`table-note-grid-body-${suffix}`);
       if (!body) return;
-      body.innerHTML = tableNoteEditGridHtml();
-      const table = body.closest('table');
-      const oldColgroup = table ? table.querySelector('colgroup') : null;
-      if (oldColgroup) oldColgroup.outerHTML = tableNoteColgroupHtml();
+      const { html, cols } = tableNoteEditGridHtml();
+      body.style.gridTemplateColumns = `repeat(${cols}, minmax(48px, 1fr)) 22px`;
+      body.innerHTML = html;
+
+      // Ensancha la tarjeta si las columnas nuevas ya no caben en su ancho actual (nunca la
+      // achica sola, por si el usuario ya la agrandó a mano arrastrando la manija), y si con
+      // las filas/columnas nuevas la tarjeta quedó más abajo o más ancha que el panel, agranda
+      // también el panel para que no quede tapada por lo que sigue debajo (igual que ya hace
+      // el redimensionado manual, ver attachStickyNoteResizeHandles).
+      const card = document.getElementById(`table-note-card-${suffix}`);
+      const panel = document.getElementById('sticky-notes-grid');
+      if (card) {
+        const recommendedW = tableNoteEditWidth(cols);
+        const currentW = parseFloat(card.style.width) || 0;
+        card.style.width = Math.max(recommendedW, currentW) + 'px';
+        if (panel) {
+          const neededHeight = card.offsetTop + card.offsetHeight + 20;
+          if (neededHeight > panel.offsetHeight) panel.style.height = neededHeight + 'px';
+        }
+      }
       lucide.createIcons();
+    }
+
+    // Firestore no admite arreglos anidados (un arreglo dentro de otro arreglo), así que cada
+    // fila se guarda como un objeto { cells: [...] } en lugar de un arreglo suelto. Sin esto,
+    // addDoc/updateDoc rechazan el guardado (y la nota-tabla desaparece sin llegar a guardarse).
+    function tableRowsToFirestore(table) {
+      return (table || []).map(row => ({ cells: (row || []).slice() }));
+    }
+    function tableRowsFromFirestore(table) {
+      if (!Array.isArray(table) || !table.length) return [['']];
+      return table.map(row => {
+        if (Array.isArray(row)) return row.slice();
+        if (row && Array.isArray(row.cells)) return row.cells.slice();
+        return [''];
+      });
     }
 
     // Actualiza el contenido de una celda en el borrador (se lee al guardar, no en cada tecla)
@@ -11148,7 +11201,7 @@
         noteType: 'table',
         title: title,
         text: title || '(tabla sin título)', // así la papelera y las búsquedas de Kia muestran algo legible
-        table: tableNoteDraft.table.map(row => row.slice()),
+        table: tableRowsToFirestore(tableNoteDraft.table),
         palette: tableNoteDraft.palette,
         color: tableNoteDraft.color,
         opacity: tableNoteDraft.opacity,
@@ -11178,7 +11231,7 @@
         opacity: (n && typeof n.opacity === 'number') ? n.opacity : 0.75,
         font: (n && n.font) || DEFAULT_FONT,
         title: (n && n.title) || '',
-        table: (n && Array.isArray(n.table) && n.table.length) ? n.table.map(row => row.slice()) : [['']]
+        table: tableRowsFromFirestore(n && n.table)
       };
       creatingNewTableNote = false;
       editingTableNoteId = id;
@@ -11199,7 +11252,7 @@
       const updateData = {
         title: title,
         text: title || '(tabla sin título)',
-        table: tableNoteDraft.table.map(row => row.slice()),
+        table: tableRowsToFirestore(tableNoteDraft.table),
         palette: tableNoteDraft.palette,
         color: tableNoteDraft.color,
         opacity: tableNoteDraft.opacity,
