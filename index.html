@@ -355,6 +355,89 @@
     }
     .sticky-note-resize-handle:hover { opacity: 0.85; }
 
+    /* ===== NOTA-TABLA: nueva opción dentro de Notas Adhesivas =====
+       Misma tarjeta tipo Post-it (.sticky-note) pero con un título arriba y,
+       debajo, una mini tabla editable a la que se le pueden agregar filas
+       y columnas de una en una. */
+    .sticky-note-table { width: 210px; }
+    .sticky-note-table-title {
+      font-family: var(--item-font, 'Comic Sans MS', 'Segoe Print', cursive, ui-sans-serif, sans-serif);
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px dashed currentColor;
+      opacity: 0.92;
+      word-break: break-word;
+    }
+    .sticky-note-table-title-input {
+      width: 100%;
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.25);
+      border: 1px dashed rgba(0,0,0,0.35);
+      border-radius: 4px;
+      outline: none;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 6px;
+      color: inherit;
+      margin-bottom: 6px;
+    }
+    .sticky-note-table-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+    }
+    .sticky-note-table-el {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+      font-family: var(--item-font, 'Comic Sans MS', 'Segoe Print', cursive, ui-sans-serif, sans-serif);
+      font-size: 11.5px;
+    }
+    .sticky-note-table-el td {
+      border: 1px solid rgba(0,0,0,0.25);
+      padding: 3px 5px;
+      min-width: 32px;
+      word-break: break-word;
+      vertical-align: top;
+    }
+    .sticky-note-table-cell-input {
+      width: 100%;
+      min-width: 32px;
+      background: rgba(255,255,255,0.35);
+      border: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 11.5px;
+      color: inherit;
+      padding: 2px 3px;
+    }
+    .sticky-note-table-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+    .sticky-note-table-controls button {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.3);
+      border: 1px solid rgba(0,0,0,0.2);
+      color: inherit;
+      cursor: pointer;
+      opacity: 0.85;
+    }
+    .sticky-note-table-controls button:hover { opacity: 1; }
+    .sticky-note-table-controls button i { pointer-events: none; }
+
     /* ===== TARJETAS DE CUENTAS: cuadrícula responsiva con reordenamiento por arrastre =====
        #accounts-deck usa la cuadrícula normal de Tailwind (grid-cols-2 en móvil,
        sm:grid-cols-4 en escritorio) para que las tarjetas SIEMPRE se acomoden solas
@@ -3116,6 +3199,9 @@
                 <button id="btn-add-note" onclick="window.showAddNoteInput()" class="flex items-center justify-center w-6 h-6 bg-[#7000ff]/15 text-[#faff00] border border-[#faff00]/30 hover:bg-[#7000ff]/25 rounded-lg transition-colors cursor-pointer" title="Añadir nota">
                   <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                 </button>
+                <button id="btn-add-table-note" onclick="window.showAddTableNoteInput()" class="flex items-center justify-center w-6 h-6 bg-[#7000ff]/15 text-[#00f0ff] border border-[#00f0ff]/30 hover:bg-[#7000ff]/25 rounded-lg transition-colors cursor-pointer" title="Añadir nota de tabla">
+                  <i data-lucide="table" class="w-3.5 h-3.5"></i>
+                </button>
                 <button type="button" class="widget-collapse-btn" title="Compactar / expandir" onclick="window.toggleWidgetSection('sticky-notes-section', this)">
                   <i data-lucide="chevron-down" class="widget-collapse-icon"></i>
                 </button>
@@ -4912,6 +4998,8 @@
     let vaultPatternSetupTemp = null; // patrón dibujado en el paso 1, pendiente de confirmar
     let editingNoteId = null;
     let creatingNewNote = false;
+    let editingTableNoteId = null; // id de la nota-tabla que se está editando ahora mismo
+    let creatingNewTableNote = false; // true mientras se está creando una nota-tabla nueva
     let stickyNoteZCounter = 0; // Define qué nota queda "encima" al arrastrarla/editarla
     
     let currentDate = new Date();
@@ -9799,6 +9887,8 @@
     // Borrador de color/transparencia en uso mientras se crea o edita una nota o tarea
     let noteDraft = { ...DEFAULT_ITEM_STYLE, lineOpacity: DEFAULT_NOTE_LINE_OPACITY };
     let taskDraft = { ...DEFAULT_ITEM_STYLE };
+    // Borrador de la nota-tabla (título + celdas) que se está creando o editando ahora mismo
+    let tableNoteDraft = { ...DEFAULT_ITEM_STYLE, title: '', table: [['', ''], ['', '']] };
     // Id del elemento de una tarea-lista que se está editando (ícono de lápiz) en el borrador actual
     let editingSubitemId = null;
 
@@ -9873,7 +9963,7 @@
 
     // Actualiza el color/transparencia elegido y refresca solo lo necesario (sin perder el foco del texto)
     function setItemDraft(kind, field, value) {
-      const draft = kind === 'note' ? noteDraft : taskDraft;
+      const draft = kind === 'note' ? noteDraft : (kind === 'tablenote' ? tableNoteDraft : taskDraft);
       let rebuildPicker = true;
       if (field === 'opacity') {
         draft.opacity = parseInt(value, 10) / 100;
@@ -9890,6 +9980,7 @@
         draft.font = value;
       }
       if (kind === 'note') applyNoteDraftUI(rebuildPicker);
+      else if (kind === 'tablenote') applyTableNoteDraftUI(rebuildPicker);
       else applyTaskDraftUI(rebuildPicker);
     }
     window.setItemDraft = setItemDraft;
@@ -9915,6 +10006,20 @@
         const pickerContainer = document.getElementById(`task-picker-${suffix}`);
         if (pickerContainer) {
           pickerContainer.innerHTML = colorPickerHtml('task', taskDraft.palette, taskDraft.color, taskDraft.opacity, undefined, taskDraft.font, taskDraft.isList);
+          lucide.createIcons();
+        }
+      }
+    }
+
+    // Igual que applyNoteDraftUI/applyTaskDraftUI pero para la nota-tabla que se está creando o editando
+    function applyTableNoteDraftUI(rebuildPicker) {
+      const suffix = editingTableNoteId ? `edit-${editingTableNoteId}` : 'new';
+      const card = document.getElementById(`table-note-card-${suffix}`);
+      if (card) card.setAttribute('style', buildItemStyle(tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, 'note', 0, tableNoteDraft.font));
+      if (rebuildPicker) {
+        const pickerContainer = document.getElementById(`table-note-picker-${suffix}`);
+        if (pickerContainer) {
+          pickerContainer.innerHTML = colorPickerHtml('tablenote', tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, undefined, tableNoteDraft.font);
           lucide.createIcons();
         }
       }
@@ -10481,7 +10586,7 @@
       if (!container) return;
       container.innerHTML = '';
 
-      if (stickyNotes.length === 0 && !creatingNewNote) {
+      if (stickyNotes.length === 0 && !creatingNewNote && !creatingNewTableNote) {
         container.innerHTML = '<p class="sticky-note-empty-msg">No tienes notas adhesivas. Pulsa "+" para pegar una.</p>';
         container.style.height = '';
         lucide.createIcons();
@@ -10494,6 +10599,73 @@
       stickyNotes.forEach((n, idx) => {
         const rotClass = stickyNoteRotationClass(n.id);
         const pos = getNotePosition(n, idx, containerWidth);
+
+        // ===== NOTA-TABLA: se renderiza aparte y no toca el flujo original de notas de texto =====
+        if (n.noteType === 'table') {
+          const isEditingTable = editingTableNoteId === n.id;
+          const zT = isEditingTable ? (stickyNoteZCounter + 1) : (typeof n.zIndex === 'number' ? n.zIndex : 0);
+          const posStyleT = `position:absolute; left:${pos.x}px; top:${pos.y}px; z-index:${zT};`;
+
+          if (isEditingTable) {
+            const wT = (typeof n.width === 'number') ? n.width : 210;
+            const hT = (typeof n.height === 'number') ? n.height : 240;
+            const sizeStyleT = `width:${wT}px; height:${hT}px;`;
+            const styleT = buildItemStyle(tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, 'note', 0, tableNoteDraft.font) + posStyleT + sizeStyleT;
+            container.innerHTML += `
+              <div id="table-note-card-edit-${n.id}" class="sticky-note sticky-note-table sticky-note-editing ${rotClass}" style="${styleT}">
+                <input type="text" id="table-note-title-input-edit-${n.id}" maxlength="60" placeholder="Título" value="${escapeHtml(tableNoteDraft.title)}" class="sticky-note-table-title-input" />
+                <div class="sticky-note-table-wrap">
+                  <table class="sticky-note-table-el sticky-note-table-editable">
+                    <tbody id="table-note-grid-body-edit-${n.id}">${tableNoteEditGridHtml()}</tbody>
+                  </table>
+                </div>
+                <div class="sticky-note-table-controls">
+                  <button type="button" onclick="window.addTableNoteRow()" title="Agregar fila"><i data-lucide="plus" class="w-3 h-3"></i>Fila</button>
+                  <button type="button" onclick="window.removeTableNoteRow()" title="Quitar última fila"><i data-lucide="minus" class="w-3 h-3"></i>Fila</button>
+                  <button type="button" onclick="window.addTableNoteCol()" title="Agregar columna"><i data-lucide="plus" class="w-3 h-3"></i>Col</button>
+                  <button type="button" onclick="window.removeTableNoteCol()" title="Quitar última columna"><i data-lucide="minus" class="w-3 h-3"></i>Col</button>
+                </div>
+                <div id="table-note-picker-edit-${n.id}">${colorPickerHtml('tablenote', tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, undefined, tableNoteDraft.font)}</div>
+                <div class="flex justify-end gap-1 mt-2">
+                  <button onclick="window.saveEditTableNote('${n.id}')" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Guardar">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                  </button>
+                  <button onclick="window.cancelEditTableNote()" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Cancelar">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                  </button>
+                </div>
+                <div class="sticky-note-resize-handle" data-resize-for="table-note-card-edit-${n.id}" title="Arrastra para cambiar el tamaño"></div>
+              </div>
+            `;
+          } else {
+            const paletteT = n.palette || 'pastel';
+            const colorT = n.color || STICKY_NOTE_COLORS[idx % STICKY_NOTE_COLORS.length];
+            const opacityT = (typeof n.opacity === 'number') ? n.opacity : 0.75;
+            const fontT = n.font || DEFAULT_FONT;
+            const sizeStyleT = (typeof n.width === 'number' && typeof n.height === 'number')
+              ? `width:${n.width}px; height:${n.height}px;` : '';
+            const styleT = buildItemStyle(paletteT, colorT, opacityT, 'note', 0, fontT) + posStyleT + sizeStyleT;
+            const tbl = (Array.isArray(n.table) && n.table.length) ? n.table : [['']];
+            container.innerHTML += `
+              <div class="sticky-note sticky-note-table ${rotClass}" data-note-id="${n.id}" style="${styleT}">
+                <div class="sticky-note-table-title">${escapeHtml(n.title || 'Sin título')}</div>
+                <div class="sticky-note-table-wrap">
+                  <table class="sticky-note-table-el"><tbody>${tbl.map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell || '')}</td>`).join('')}</tr>`).join('')}</tbody></table>
+                </div>
+                <div class="sticky-note-actions flex justify-end gap-1 mt-1">
+                  <button onclick="window.startEditTableNote('${n.id}')" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Editar">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button onclick="window.deleteNote('${n.id}')" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Eliminar">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+          return; // ya se renderizó esta nota-tabla; el resto de este forEach es solo para notas de texto
+        }
+
         const isEditingThis = editingNoteId === n.id;
         // Mientras se edita, la nota sube por delante de cualquier otra que la solape.
         const z = isEditingThis ? (stickyNoteZCounter + 1) : (typeof n.zIndex === 'number' ? n.zIndex : 0);
@@ -10565,6 +10737,38 @@
         `;
       }
 
+      if (creatingNewTableNote) {
+        const pos = getNotePosition({}, stickyNotes.length, containerWidth);
+        const style = buildItemStyle(tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, 'note', 0, tableNoteDraft.font) +
+          `position:absolute; left:${pos.x}px; top:${pos.y}px; z-index:${stickyNoteZCounter + 1}; width:210px; height:240px;`;
+        container.innerHTML += `
+          <div id="table-note-card-new" class="sticky-note sticky-note-table sticky-note-editing sticky-note-rot-1" style="${style}">
+            <input type="text" id="table-note-title-input-new" maxlength="60" placeholder="Título" class="sticky-note-table-title-input" />
+            <div class="sticky-note-table-wrap">
+              <table class="sticky-note-table-el sticky-note-table-editable">
+                <tbody id="table-note-grid-body-new">${tableNoteEditGridHtml()}</tbody>
+              </table>
+            </div>
+            <div class="sticky-note-table-controls">
+              <button type="button" onclick="window.addTableNoteRow()" title="Agregar fila"><i data-lucide="plus" class="w-3 h-3"></i>Fila</button>
+              <button type="button" onclick="window.removeTableNoteRow()" title="Quitar última fila"><i data-lucide="minus" class="w-3 h-3"></i>Fila</button>
+              <button type="button" onclick="window.addTableNoteCol()" title="Agregar columna"><i data-lucide="plus" class="w-3 h-3"></i>Col</button>
+              <button type="button" onclick="window.removeTableNoteCol()" title="Quitar última columna"><i data-lucide="minus" class="w-3 h-3"></i>Col</button>
+            </div>
+            <div id="table-note-picker-new">${colorPickerHtml('tablenote', tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, undefined, tableNoteDraft.font)}</div>
+            <div class="flex justify-end gap-1 mt-2">
+              <button onclick="window.saveNewTableNote()" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Guardar">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </button>
+              <button onclick="window.cancelAddTableNote()" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Cancelar">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <div class="sticky-note-resize-handle" data-resize-for="table-note-card-new" title="Arrastra para cambiar el tamaño"></div>
+          </div>
+        `;
+      }
+
       lucide.createIcons();
 
       // El contenedor es un lienzo absoluto (sin alto propio), así que su alto se calcula
@@ -10596,6 +10800,25 @@
           input.focus();
           input.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') { e.preventDefault(); cancelAddNote(); }
+          });
+        }
+      }
+
+      if (editingTableNoteId) {
+        const input = document.getElementById(`table-note-title-input-edit-${editingTableNoteId}`);
+        if (input) {
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); cancelEditTableNote(); }
+          });
+        }
+      }
+
+      if (creatingNewTableNote) {
+        const input = document.getElementById('table-note-title-input-new');
+        if (input) {
+          input.focus();
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); cancelAddTableNote(); }
           });
         }
       }
@@ -10764,6 +10987,153 @@
         console.error("Error al guardar la nota:", error);
       }
     }
+
+    // ===== NOTA-TABLA: nueva opción dentro de Notas Adhesivas =====
+    // Reutiliza la misma colección de Firestore ('stickyNotes'), el mismo selector de
+    // color/transparencia/tipografía y el mismo arrastre/redimensionado que las notas de
+    // texto; solo cambia el contenido (título + tabla) mediante el campo noteType:'table'.
+
+    // Construye únicamente las filas <tr> de la tabla en edición, a partir de tableNoteDraft.table
+    function tableNoteEditGridHtml() {
+      const tbl = (tableNoteDraft.table && tableNoteDraft.table.length) ? tableNoteDraft.table : [['']];
+      return tbl.map((row, r) => `<tr>${row.map((cell, c) =>
+        `<td><input type="text" class="sticky-note-table-cell-input" value="${escapeHtml(cell || '')}" oninput="window.setTableNoteCell(${r},${c},this.value)" /></td>`
+      ).join('')}</tr>`).join('');
+    }
+
+    // Reconstruye solo la cuadrícula (sin perder el foco del título ni del selector de color)
+    function refreshTableNoteGrid() {
+      const suffix = editingTableNoteId ? `edit-${editingTableNoteId}` : 'new';
+      const body = document.getElementById(`table-note-grid-body-${suffix}`);
+      if (body) body.innerHTML = tableNoteEditGridHtml();
+    }
+
+    // Actualiza el contenido de una celda en el borrador (se lee al guardar, no en cada tecla)
+    function setTableNoteCell(r, c, value) {
+      if (tableNoteDraft.table[r]) tableNoteDraft.table[r][c] = value;
+    }
+    window.setTableNoteCell = setTableNoteCell;
+
+    // Agrega/quita filas y columnas de una en una, como pidió el usuario
+    function addTableNoteRow() {
+      const cols = (tableNoteDraft.table[0] || ['']).length;
+      tableNoteDraft.table.push(new Array(cols).fill(''));
+      refreshTableNoteGrid();
+    }
+    window.addTableNoteRow = addTableNoteRow;
+
+    function removeTableNoteRow() {
+      if (tableNoteDraft.table.length <= 1) return;
+      tableNoteDraft.table.pop();
+      refreshTableNoteGrid();
+    }
+    window.removeTableNoteRow = removeTableNoteRow;
+
+    function addTableNoteCol() {
+      tableNoteDraft.table.forEach(row => row.push(''));
+      refreshTableNoteGrid();
+    }
+    window.addTableNoteCol = addTableNoteCol;
+
+    function removeTableNoteCol() {
+      if ((tableNoteDraft.table[0] || []).length <= 1) return;
+      tableNoteDraft.table.forEach(row => row.pop());
+      refreshTableNoteGrid();
+    }
+    window.removeTableNoteCol = removeTableNoteCol;
+
+    function showAddTableNoteInput() {
+      creatingNewTableNote = true;
+      editingTableNoteId = null;
+      tableNoteDraft = { ...DEFAULT_ITEM_STYLE, title: '', table: [['', ''], ['', '']] };
+      renderStickyNotes();
+    }
+    window.showAddTableNoteInput = showAddTableNoteInput;
+
+    function cancelAddTableNote() {
+      creatingNewTableNote = false;
+      renderStickyNotes();
+    }
+    window.cancelAddTableNote = cancelAddTableNote;
+
+    async function saveNewTableNote() {
+      const titleInput = document.getElementById('table-note-title-input-new');
+      const title = titleInput ? titleInput.value.trim() : '';
+      const card = document.getElementById('table-note-card-new');
+      const newNoteData = {
+        noteType: 'table',
+        title: title,
+        text: title || '(tabla sin título)', // así la papelera y las búsquedas de Kia muestran algo legible
+        table: tableNoteDraft.table.map(row => row.slice()),
+        palette: tableNoteDraft.palette,
+        color: tableNoteDraft.color,
+        opacity: tableNoteDraft.opacity,
+        font: tableNoteDraft.font,
+        createdAt: new Date().toISOString()
+      };
+      if (card) {
+        newNoteData.width = card.offsetWidth;
+        newNoteData.height = card.offsetHeight;
+      }
+      creatingNewTableNote = false;
+      renderStickyNotes();
+      try {
+        await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'stickyNotes'), newNoteData);
+      } catch (error) {
+        console.error("Error al guardar la nota-tabla:", error);
+      }
+    }
+    window.saveNewTableNote = saveNewTableNote;
+
+    function startEditTableNote(id) {
+      const idx = stickyNotes.findIndex(x => x.id === id);
+      const n = idx >= 0 ? stickyNotes[idx] : null;
+      tableNoteDraft = {
+        palette: (n && n.palette) || 'pastel',
+        color: (n && n.color) || STICKY_NOTE_COLORS[(idx >= 0 ? idx : 0) % STICKY_NOTE_COLORS.length],
+        opacity: (n && typeof n.opacity === 'number') ? n.opacity : 0.75,
+        font: (n && n.font) || DEFAULT_FONT,
+        title: (n && n.title) || '',
+        table: (n && Array.isArray(n.table) && n.table.length) ? n.table.map(row => row.slice()) : [['', '']]
+      };
+      creatingNewTableNote = false;
+      editingTableNoteId = id;
+      renderStickyNotes();
+    }
+    window.startEditTableNote = startEditTableNote;
+
+    function cancelEditTableNote() {
+      editingTableNoteId = null;
+      renderStickyNotes();
+    }
+    window.cancelEditTableNote = cancelEditTableNote;
+
+    async function saveEditTableNote(id) {
+      const titleInput = document.getElementById(`table-note-title-input-edit-${id}`);
+      const title = titleInput ? titleInput.value.trim() : '';
+      const card = document.getElementById(`table-note-card-edit-${id}`);
+      const updateData = {
+        title: title,
+        text: title || '(tabla sin título)',
+        table: tableNoteDraft.table.map(row => row.slice()),
+        palette: tableNoteDraft.palette,
+        color: tableNoteDraft.color,
+        opacity: tableNoteDraft.opacity,
+        font: tableNoteDraft.font
+      };
+      if (card) {
+        updateData.width = card.offsetWidth;
+        updateData.height = card.offsetHeight;
+      }
+      editingTableNoteId = null;
+      renderStickyNotes();
+      try {
+        await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'stickyNotes', id), updateData);
+      } catch (error) {
+        console.error("Error al actualizar la nota-tabla:", error);
+      }
+    }
+    window.saveEditTableNote = saveEditTableNote;
 
     // Guarda una nota adhesiva creada desde el cuadro de texto de la mascota (Kia).
     // Reutiliza exactamente la misma colección de Firestore que las notas normales,
