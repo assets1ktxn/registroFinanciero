@@ -10705,8 +10705,11 @@
             const colorT = n.color || STICKY_NOTE_COLORS[idx % STICKY_NOTE_COLORS.length];
             const opacityT = (typeof n.opacity === 'number') ? n.opacity : 0.75;
             const fontT = n.font || DEFAULT_FONT;
-            const sizeStyleT = (typeof n.width === 'number' && typeof n.height === 'number')
-              ? `width:${n.width}px; height:${n.height}px;` : '';
+            // Solo se fija el ancho guardado; el alto se deja automático para que la tarjeta
+            // se acomode justo a donde termina la tabla. Antes también se fijaba el alto
+            // guardado, que podía haber quedado grande de cuando se agregaron varias filas
+            // durante la edición, dejando un hueco vacío debajo si la tabla final era más chica.
+            const sizeStyleT = (typeof n.width === 'number') ? `width:${n.width}px;` : '';
             const styleT = buildItemStyle(paletteT, colorT, opacityT, 'note', 0, fontT) + posStyleT + sizeStyleT;
             const tbl = tableRowsFromFirestore(n.table);
             container.innerHTML += `
