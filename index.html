@@ -407,38 +407,36 @@
        esquina inferior derecha. Funciona igual en notas normales y notas-tabla. */
     .sticky-note-resize-handle {
       position: absolute;
-      right: 3px;
-      bottom: 3px;
-      left: auto;
-      width: 22px;
-      height: 22px;
-      display: block;
+      right: 2px;
+      bottom: 2px;
+      width: 20px;
+      height: 20px;
       cursor: nwse-resize;
       touch-action: none;
       color: currentColor;
-      opacity: 0.46;
-      z-index: 8;
+      opacity: 0.38;
+      z-index: 12;
       box-sizing: border-box;
-      border-radius: 0 0 10px 0;
       background: transparent;
-      transition: opacity 0.15s ease, transform 0.15s ease;
+      transition: opacity 0.15s ease;
     }
     .sticky-note-resize-handle::after {
       content: '';
       position: absolute;
-      right: 2px;
-      bottom: 2px;
-      width: 15px;
-      height: 15px;
+      inset: 3px 2px 2px 3px;
       background:
-        linear-gradient(135deg, transparent 0 58%, currentColor 59% 66%, transparent 67%) 0 0 / 8px 8px,
-        linear-gradient(135deg, transparent 0 58%, currentColor 59% 66%, transparent 67%) 4px 4px / 8px 8px,
-        linear-gradient(135deg, transparent 0 58%, currentColor 59% 66%, transparent 67%) 8px 8px / 8px 8px;
-      background-repeat: no-repeat;
+        linear-gradient(135deg, transparent 0 56%, currentColor 57% 64%, transparent 65%) 8px 0 / 8px 8px no-repeat,
+        linear-gradient(135deg, transparent 0 56%, currentColor 57% 64%, transparent 65%) 4px 4px / 8px 8px no-repeat,
+        linear-gradient(135deg, transparent 0 56%, currentColor 57% 64%, transparent 65%) 0 8px / 8px 8px no-repeat;
     }
     .sticky-note-resize-handle:hover {
-      opacity: 0.82;
-      transform: none;
+      opacity: 0.78;
+    }
+    .sticky-note-table .sticky-note-resize-handle {
+      width: 21px;
+      height: 21px;
+      right: 1px;
+      bottom: 1px;
     }
 
     /* ===== NOTA-TABLA: nueva opción dentro de Notas Adhesivas =====
@@ -10903,7 +10901,7 @@
             const styleT = buildItemStyle(paletteT, colorT, opacityT, 'note', 0, fontT) + posStyleT + sizeStyleT;
             const tbl = tableRowsFromFirestore(n.table);
             container.innerHTML += `
-              <div class="sticky-note sticky-note-table ${rotClass}" data-note-id="${n.id}" style="${styleT}">
+              <div id="table-note-card-${n.id}" class="sticky-note sticky-note-table ${rotClass}" data-note-id="${n.id}" style="${styleT}">
                 <div class="sticky-note-table-title">${escapeHtml(n.title || 'Sin título')}</div>
                 <div class="sticky-note-table-wrap">
                   <table class="sticky-note-table-el"><tbody>${tbl.map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell || '')}</td>`).join('')}</tr>`).join('')}</tbody></table>
@@ -10916,6 +10914,7 @@
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
+                <div class="sticky-note-resize-handle" data-resize-for="table-note-card-${n.id}" title="Redimensionar tabla" aria-label="Redimensionar tabla"></div>
               </div>
             `;
           }
@@ -11161,13 +11160,27 @@
           const card = document.getElementById(handle.getAttribute('data-resize-for'));
           if (!card) return;
           const rect = card.getBoundingClientRect();
+          const isTable = card.classList.contains('sticky-note-table');
+          let minW = MIN_W, minH = MIN_H;
+          if (isTable) {
+            const table = card.querySelector('.sticky-note-table-el');
+            const rows = table ? table.querySelectorAll('tr').length : 1;
+            const firstRow = table ? table.querySelector('tr') : null;
+            const cols = firstRow ? firstRow.querySelectorAll('td').length : 1;
+            // Mantiene una vista legible: las columnas no se hacen excesivamente estrechas.
+            minW = Math.max(170, cols * 46 + 30);
+            minH = Math.max(100, 58 + rows * 24);
+          }
           resizeState = {
             card,
             pointerId: e.pointerId,
             startW: rect.width,
             startH: rect.height,
             startX: e.clientX,
-            startY: e.clientY
+            startY: e.clientY,
+            minW,
+            minH,
+            isTable
           };
           handle.setPointerCapture(e.pointerId);
           e.preventDefault();
@@ -11178,11 +11191,26 @@
           if (!resizeState || resizeState.pointerId !== e.pointerId) return;
           const dw = e.clientX - resizeState.startX;
           const dh = e.clientY - resizeState.startY;
-          const newW = Math.max(MIN_W, resizeState.startW + dw);
-          const newH = Math.max(MIN_H, resizeState.startH + dh);
-          resizeState.card.style.width = newW + 'px';
-          resizeState.card.style.height = newH + 'px';
-          const neededHeight = resizeState.card.offsetTop + newH + 20;
+          const newW = Math.max(resizeState.minW || MIN_W, resizeState.startW + dw);
+          const requestedH = Math.max(resizeState.minH || MIN_H, resizeState.startH + dh);
+
+          if (resizeState.isTable) {
+            // Las tablas conservan el mínimo calculado según filas/columnas.
+            resizeState.card.style.width = newW + 'px';
+            resizeState.card.style.height = requestedH + 'px';
+          } else {
+            // Nota normal: el alto nunca puede dejar el texto "apachurrado".
+            // Primero dejamos que la tarjeta calcule su altura natural con el nuevo ancho
+            // y después respetamos la altura que el usuario pidió solo si alcanza para todo.
+            resizeState.card.style.width = newW + 'px';
+            resizeState.card.style.height = 'auto';
+            const naturalH = Math.ceil(resizeState.card.scrollHeight);
+            const smartMinH = Math.max(resizeState.minH || MIN_H, naturalH);
+            resizeState.card.style.height = Math.max(requestedH, smartMinH) + 'px';
+          }
+
+          const currentH = resizeState.card.offsetHeight;
+          const neededHeight = resizeState.card.offsetTop + currentH + 20;
           if (neededHeight > container.offsetHeight) container.style.height = neededHeight + 'px';
         });
 
