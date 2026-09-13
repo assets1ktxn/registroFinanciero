@@ -2861,7 +2861,7 @@
 <body class="min-h-screen selection:bg-[#ff007f]/30 p-4 md:p-8 relative">
 
   <!-- Imagen Flotante Tooltip Modificada a círculo -->
-  <img id="snoopy-hover-img" class="fixed z-[9999] hidden w-32 md:w-40 h-32 md:h-40 aspect-square rounded-full shadow-[0_10px_30px_rgba(112,0,255,0.4)] pointer-events-none transform -translate-x-1/2 -translate-y-[110%] transition-opacity duration-200 opacity-0 border-2 border-[#7000ff]/60 object-cover" src="" alt="Tooltip" onerror="this.onerror=null; this.style.display='none';" />
+  <img id="snoopy-hover-img" class="fixed z-[9999] hidden w-32 md:w-40 h-32 md:h-40 aspect-square rounded-full shadow-[0_10px_30px_rgba(112,0,255,0.4)] pointer-events-none transform -translate-x-1/2 -translate-y-[110%] transition-opacity duration-200 opacity-0 border-2 border-[#7000ff]/60 object-cover" src="" alt="Tooltip" onerror="this.classList.add('hidden','opacity-0'); this.style.display=''; this.removeAttribute('src');" />
 
   <!-- PANTALLA DE INICIO DE SESIÓN -->
   <div id="login-screen" class="fixed inset-0 bg-[#040307] z-[100] flex items-center justify-center p-4 transition-all duration-700 ease-out">
@@ -3475,6 +3475,9 @@
       </div>
 
       <form id="hover-images-form" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        <p id="hover-images-empty-hint" class="hidden text-[11px] text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-center leading-snug">
+          Aún no hay imágenes guardadas. Toca cada círculo para elegir una foto y luego "Guardar Imágenes".
+        </p>
         <!-- Imagen Ingreso -->
         <div class="text-center space-y-2 border border-gray-800 p-3 rounded-2xl bg-gray-900/50">
           <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Ingresos</label>
@@ -4039,6 +4042,9 @@
         </button>
         <button onclick="openMascotSettingsModal()" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-300 hover:text-white hover:bg-[#00f0ff]/10 rounded-xl transition-colors">
           <i data-lucide="paw-print" class="w-5 h-5 text-[#00f0ff]"></i> Frases de Kia
+        </button>
+        <button onclick="openHoverImagesModal()" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-300 hover:text-white hover:bg-[#7000ff]/10 rounded-xl transition-colors">
+          <i data-lucide="image" class="w-5 h-5 text-[#7000ff]"></i> Imágenes Flotantes
         </button>
       </div>
 
@@ -5373,7 +5379,10 @@
       const imagesDocRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'settings', 'hoverImages');
       onSnapshot(imagesDocRef, async (docSnap) => {
         if (docSnap.exists()) {
-          hoverImagesData = docSnap.data();
+          // Se combina con los valores por defecto para que, si el documento en
+          // Firestore quedó incompleto (ej. le falta alguna categoría), esa
+          // categoría no rompa las demás ni quede undefined.
+          hoverImagesData = { ingreso: '', gasto: '', ahorro: '', diecast: '', ...docSnap.data() };
         } else {
           try {
             await setDoc(imagesDocRef, hoverImagesData);
@@ -5381,6 +5390,7 @@
             console.error("Error guardando imágenes por defecto:", e);
           }
         }
+        console.log('[Imágenes Flotantes] Sincronizado desde Firestore:', hoverImagesData);
       }, (error) => console.error("Error sincronizando imágenes:", error));
 
       const widgetCollapseDocRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'settings', 'widgetCollapse');
@@ -9664,6 +9674,7 @@
     handleHoverImageUpload('img-input-diecast', 'preview-img-diecast');
 
     function openHoverImagesModal() {
+      if (profileDropdownMenu) profileDropdownMenu.classList.add('hidden');
       const prevIn = document.getElementById('preview-img-ingreso');
       const prevGa = document.getElementById('preview-img-gasto');
       const prevAh = document.getElementById('preview-img-ahorro');
@@ -9673,6 +9684,14 @@
       if (prevGa) prevGa.src = hoverImagesData.gasto || '';
       if (prevAh) prevAh.src = hoverImagesData.ahorro || '';
       if (prevDi) prevDi.src = hoverImagesData.diecast || '';
+
+      // Diagnóstico: si las 4 categorías están vacías (nunca se guardó nada, o no
+      // sincronizó desde Firestore), se lo hacemos evidente al usuario en vez de
+      // dejarlo adivinar por qué no aparecen al pasar el mouse en el Resumen.
+      const allEmpty = !hoverImagesData.ingreso && !hoverImagesData.gasto && !hoverImagesData.ahorro && !hoverImagesData.diecast;
+      const emptyHint = document.getElementById('hover-images-empty-hint');
+      if (emptyHint) emptyHint.classList.toggle('hidden', !allEmpty);
+      console.log('[Imágenes Flotantes] Estado actual al abrir el modal:', hoverImagesData);
 
       const modalElement = document.getElementById('hover-images-modal');
       const content = document.getElementById('hover-images-content');
@@ -9714,9 +9733,11 @@
         try {
           const imagesDocRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'settings', 'hoverImages');
           await setDoc(imagesDocRef, newImages, { merge: true });
+          console.log('[Imágenes Flotantes] Guardado correctamente:', newImages);
           closeHoverImagesModal();
         } catch (error) {
           console.error("Error al actualizar imágenes flotantes:", error);
+          window.alert('No se pudieron guardar las imágenes flotantes. Revisa tu conexión e inténtalo de nuevo.');
         }
       });
     }
