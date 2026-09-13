@@ -12713,7 +12713,7 @@
         const fixedControls = Array.from(card.children)
           .filter(el => el !== textarea && !el.classList.contains('sticky-note-resize-handle'))
           .reduce((sum, el) => sum + el.offsetHeight, 0);
-        const needed = Math.max(220, nextHeight + fixedControls + 28);
+        const needed = Math.max(120, nextHeight + fixedControls + 28);
         if (card.offsetHeight < needed) card.style.height = needed + 'px';
       }
       const grid = document.getElementById('sticky-notes-grid');
@@ -12737,6 +12737,18 @@
         font: noteDraft.font
       };
       if (card) {
+        // La nota de texto debe guardar únicamente la altura necesaria para su contenido,
+        // no la altura temporal que pudo tener durante la edición. Igual que una nota-tabla,
+        // se ajusta justo hasta donde termina el contenido + sus controles.
+        if (input) {
+          input.style.height = 'auto';
+          const textHeight = Math.max(60, input.scrollHeight);
+          const fixedControls = Array.from(card.children)
+            .filter(el => el !== input && !el.classList.contains('sticky-note-resize-handle'))
+            .reduce((sum, el) => sum + el.offsetHeight, 0);
+          const fittedHeight = Math.max(120, textHeight + fixedControls + 28);
+          card.style.height = fittedHeight + 'px';
+        }
         updateData.width = card.offsetWidth;
         updateData.height = card.offsetHeight;
       }
