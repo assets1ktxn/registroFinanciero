@@ -25,6 +25,11 @@
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Selector de emojis: diccionario completo y siempre actualizado (jsdelivr sirve
+       la última versión del paquete), usado para poner un emoji como icono de un
+       registro de la Bóveda -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
   
   <!-- Librerías para Exportar a PDF y Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2977,6 +2982,31 @@
       border-left-color: rgba(112,0,255,0.18);
       box-shadow: -24px 0 60px rgba(112,0,255,0.12);
     }
+
+    /* ===== Selector de emojis (icono personalizado de un registro de la Bóveda) ===== */
+    emoji-picker {
+      width: 100%;
+      height: 100%;
+      --background: #0b0d14;
+      --border-color: #1f2937;
+      --border-radius: 1rem;
+      --button-hover-background: rgba(0, 240, 255, 0.12);
+      --button-active-background: rgba(0, 240, 255, 0.22);
+      --category-font-color: #9ca3af;
+      --indicator-color: #00f0ff;
+      --input-border-color: #1f2937;
+      --input-border-radius: 0.75rem;
+      --input-font-color: #ffffff;
+      --input-placeholder-color: #6b7280;
+      --outline-color: #00f0ff;
+    }
+    @media screen and (max-width: 420px) {
+      emoji-picker {
+        --num-columns: 6;
+        --category-emoji-size: 1.125rem;
+        --emoji-size: 1.25rem;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen selection:bg-[#ff007f]/30 p-4 md:p-8 relative">
@@ -4713,8 +4743,11 @@
   <!-- MODAL: VISOR DE UN ELEMENTO DE LA BÓVEDA -->
   <div id="vault-view-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-[115] hidden opacity-0 transition-all duration-300">
     <div class="bg-gray-950/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-800 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-300" id="vault-view-content">
-      <div class="flex justify-between items-start p-5 border-b border-gray-800">
-        <span id="vault-view-date" class="text-xs text-gray-500 font-semibold"></span>
+      <div class="flex justify-between items-center p-5 border-b border-gray-800">
+        <div class="flex items-center gap-2 min-w-0">
+          <span id="vault-view-icon" class="hidden w-7 h-7 rounded-lg overflow-hidden items-center justify-center bg-gray-900 border border-gray-800 text-base flex-shrink-0"></span>
+          <span id="vault-view-date" class="text-xs text-gray-500 font-semibold truncate"></span>
+        </div>
         <button onclick="window.closeVaultViewModal()" class="text-gray-400 hover:text-white transition-colors flex-shrink-0">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
@@ -4731,6 +4764,57 @@
         </button>
         <button type="button" id="vault-view-save-btn" onclick="window.saveEditVaultItem()" class="hidden flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#00f0ff] to-[#7000ff] text-gray-950 text-sm font-bold transition-colors">
           Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ICONO PERSONALIZADO DE UN REGISTRO DE LA BÓVEDA (emoji o imagen) -->
+  <div id="vault-icon-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-[116] hidden opacity-0 transition-all duration-300">
+    <div class="bg-gray-950/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-800 w-full max-w-sm overflow-hidden transform scale-95 transition-all duration-300 flex flex-col" id="vault-icon-content" style="max-height:85vh;">
+      <div class="flex justify-between items-start p-5 border-b border-gray-800 flex-shrink-0">
+        <div>
+          <h3 class="text-base font-bold text-white leading-tight">Icono del registro</h3>
+          <span class="text-xs text-gray-500">Elige un emoji o sube una imagen pequeña</span>
+        </div>
+        <button onclick="window.closeVaultIconModal()" class="text-gray-400 hover:text-white transition-colors flex-shrink-0">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Pestañas Emoji / Imagen -->
+      <div class="flex items-center gap-2 px-5 pt-4 flex-shrink-0">
+        <button id="vault-icon-tab-btn-emoji" onclick="window.setVaultIconTab('emoji')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer">
+          <i data-lucide="smile" class="w-3.5 h-3.5"></i> Emoji
+        </button>
+        <button id="vault-icon-tab-btn-imagen" onclick="window.setVaultIconTab('imagen')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer">
+          <i data-lucide="image-plus" class="w-3.5 h-3.5"></i> Imagen
+        </button>
+      </div>
+
+      <!-- SECCIÓN: EMOJI (diccionario completo y actualizado, búsqueda en español) -->
+      <div id="vault-icon-tab-emoji" class="p-4 flex-1 min-h-0 flex flex-col">
+        <div id="vault-emoji-picker-holder" class="rounded-2xl overflow-hidden border border-gray-800" style="height:340px;">
+          <!-- Aquí se crea dinámicamente el <emoji-picker> -->
+        </div>
+        <p class="mt-2 text-[10px] text-gray-500 text-center">Busca en español, por ejemplo: "perro", "dinero", "fiesta"...</p>
+      </div>
+
+      <!-- SECCIÓN: IMAGEN -->
+      <div id="vault-icon-tab-imagen" class="hidden p-5 space-y-3">
+        <input type="file" id="vault-icon-image-input" accept="image/*" class="hidden" onchange="window.vaultIconHandleImageSelect(event)">
+        <button type="button" onclick="document.getElementById('vault-icon-image-input').click()" class="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-gray-900 border border-gray-800 hover:border-[#faff00]/50 text-gray-300 hover:text-[#faff00] text-xs font-bold transition-colors">
+          <i data-lucide="image-plus" class="w-4 h-4"></i> Elegir imagen
+        </button>
+        <div id="vault-icon-image-preview-wrap" class="hidden">
+          <img id="vault-icon-image-preview" src="" class="w-20 h-20 mx-auto object-cover rounded-xl border border-gray-800" alt="Vista previa del icono">
+        </div>
+        <p class="text-[10px] text-gray-500 text-center">La imagen se recorta y se ajusta automáticamente a un ícono cuadrado pequeño.</p>
+      </div>
+
+      <div class="p-4 border-t border-gray-800 flex-shrink-0">
+        <button type="button" id="vault-icon-remove-btn" onclick="window.removeVaultItemIcon()" class="hidden w-full py-2.5 rounded-xl bg-white/5 border border-gray-700 text-gray-300 text-xs font-bold hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 transition-colors">
+          Quitar icono personalizado
         </button>
       </div>
     </div>
@@ -5014,6 +5098,10 @@
     let vaultDraftImageData = null;
     let vaultViewItemId = null; // id del elemento actualmente abierto en el visor de la Bóveda
     let vaultEditImageData = null; // nueva imagen elegida al editar (si el usuario la reemplaza)
+    let vaultIconTargetId = null; // id del registro al que se le está cambiando el icono (emoji o imagen)
+    let vaultIconActiveTab = 'emoji'; // pestaña activa del selector de icono: 'emoji' o 'imagen'
+    let vaultIconDraftImageData = null; // imagen ya recortada/comprimida elegida como icono
+    let vaultEmojiPickerEl = null; // instancia <emoji-picker> creada bajo demanda, con diccionario completo en español
     // Ajustes visuales del calendario: color del destello del día de hoy y si
     // se muestran (o no) los destellos/parpadeos de las fechas límite de TDC.
     let calendarSettings = {
@@ -13159,6 +13247,28 @@
       return haystack.includes(term);
     }
 
+    // Un icono personalizado se guarda como un solo campo ("icon"): puede ser un
+    // emoji (cadena corta) o una imagen en base64 (Data URL). Así distinguimos
+    // cuál de los dos es al momento de dibujarlo.
+    function vaultIconIsImageValue(value) {
+      return typeof value === 'string' && value.indexOf('data:image') === 0;
+    }
+
+    // Dibuja el cuadrito de 48x48 que representa a un registro en el historial:
+    // usa el icono personalizado (emoji o imagen) si el usuario ya eligió uno;
+    // si no, cae al comportamiento de siempre (la foto adjunta, o el icono
+    // genérico de hoja/documento).
+    function renderVaultPreviewIcon(item) {
+      if (item.icon) {
+        return vaultIconIsImageValue(item.icon)
+          ? `<img src="${item.icon}" class="w-12 h-12 rounded-lg object-cover border border-gray-800 flex-shrink-0" alt="Icono del registro">`
+          : `<div class="w-12 h-12 rounded-lg bg-[#00f0ff]/10 border border-[#00f0ff]/20 flex items-center justify-center flex-shrink-0 text-2xl leading-none">${item.icon}</div>`;
+      }
+      return item.image
+        ? `<img src="${item.image}" class="w-12 h-12 rounded-lg object-cover border border-gray-800 flex-shrink-0" alt="Imagen adjunta">`
+        : `<div class="w-12 h-12 rounded-lg bg-[#00f0ff]/10 border border-[#00f0ff]/20 flex items-center justify-center flex-shrink-0"><i data-lucide="file-text" class="w-5 h-5 text-[#00f0ff]"></i></div>`;
+    }
+
     function renderVaultHistory() {
       const list = document.getElementById('vault-history-list');
       if (!list) return;
@@ -13175,16 +13285,19 @@
 
       list.innerHTML = filtered.map(item => {
         const dateLabel = item.createdAt ? new Date(item.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-        const preview = item.image
-          ? `<img src="${item.image}" class="w-12 h-12 rounded-lg object-cover border border-gray-800 flex-shrink-0" alt="Imagen adjunta">`
-          : `<div class="w-12 h-12 rounded-lg bg-[#00f0ff]/10 border border-[#00f0ff]/20 flex items-center justify-center flex-shrink-0"><i data-lucide="file-text" class="w-5 h-5 text-[#00f0ff]"></i></div>`;
+        const preview = renderVaultPreviewIcon(item);
         const hasTitle = item.type !== 'image' && !!item.title;
         const primaryLabel = hasTitle ? item.title : (item.type === 'image' ? (item.caption || 'Imagen sin descripción') : item.text);
         const secondaryLabel = hasTitle ? item.text : '';
         return `
           <div class="flex items-center gap-3 bg-gray-900/50 border border-gray-800 rounded-xl p-2.5 hover:border-[#7000ff]/30 transition-colors">
-            <button onclick="window.viewVaultItem('${item.id}')" class="flex items-center gap-3 flex-1 min-w-0 text-left">
+            <button onclick="window.openVaultIconPicker('${item.id}')" class="relative flex-shrink-0" title="Cambiar icono del registro">
               ${preview}
+              <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-gray-950 border border-gray-700 flex items-center justify-center">
+                <i data-lucide="pencil" class="w-2.5 h-2.5 text-[#00f0ff]"></i>
+              </span>
+            </button>
+            <button onclick="window.viewVaultItem('${item.id}')" class="flex items-center gap-3 flex-1 min-w-0 text-left">
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-gray-200 truncate ${hasTitle ? 'font-bold' : ''}">${escapeVaultHtml(primaryLabel)}</p>
                 ${secondaryLabel ? `<p class="text-xs text-gray-500 truncate">${escapeVaultHtml(secondaryLabel)}</p>` : ''}
@@ -13268,6 +13381,20 @@
       const content = document.getElementById('vault-view-content');
       const dateEl = document.getElementById('vault-view-date');
       if (dateEl) dateEl.textContent = item.createdAt ? new Date(item.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      const iconEl = document.getElementById('vault-view-icon');
+      if (iconEl) {
+        if (item.icon) {
+          iconEl.innerHTML = vaultIconIsImageValue(item.icon)
+            ? `<img src="${item.icon}" class="w-full h-full object-cover" alt="Icono del registro">`
+            : item.icon;
+          iconEl.classList.remove('hidden');
+          iconEl.classList.add('flex');
+        } else {
+          iconEl.innerHTML = '';
+          iconEl.classList.add('hidden');
+          iconEl.classList.remove('flex');
+        }
+      }
       setVaultViewEditingUI(false);
       renderVaultViewBody(item, false);
       if (modal && content) {
@@ -13407,6 +13534,187 @@
       );
     }
 
+    // ===== Icono personalizado de un registro de la Bóveda (emoji o imagen) =====
+
+    // Traducción al español de los textos de la interfaz del selector de emojis
+    // (la librería no trae español de fábrica, así que se define aquí siguiendo
+    // exactamente la forma que espera el componente).
+    const VAULT_EMOJI_PICKER_I18N_ES = {
+      categories: {
+        custom: 'Personalizados',
+        'smileys-emotion': 'Caras y emociones',
+        'people-body': 'Personas y cuerpo',
+        'animals-nature': 'Animales y naturaleza',
+        'food-drink': 'Comida y bebida',
+        'travel-places': 'Viajes y lugares',
+        activities: 'Actividades',
+        objects: 'Objetos',
+        symbols: 'Símbolos',
+        flags: 'Banderas'
+      },
+      categoriesLabel: 'Categorías',
+      emojiUnsupportedMessage: 'Tu navegador no admite emojis a color.',
+      favoritesLabel: 'Favoritos',
+      loadingMessage: 'Cargando…',
+      networkErrorMessage: 'No se pudieron cargar los emojis.',
+      regionLabel: 'Selector de emojis',
+      searchDescription: 'Cuando haya resultados, usa las flechas para elegir y Enter para confirmar.',
+      searchLabel: 'Buscar emoji en español…',
+      searchResultsLabel: 'Resultados de la búsqueda',
+      skinToneDescription: 'Al expandir, usa las flechas para elegir y Enter para confirmar.',
+      skinToneLabel: 'Elige un tono de piel (actual: {skinTone})',
+      skinTones: ['Predeterminado', 'Claro', 'Medio claro', 'Medio', 'Medio oscuro', 'Oscuro'],
+      skinTonesLabel: 'Tonos de piel'
+    };
+
+    // Crea el <emoji-picker> una sola vez, bajo demanda (la primera vez que se
+    // abre el selector), conectado a un diccionario COMPLETO y siempre
+    // actualizado (jsdelivr sirve la última versión del paquete de datos), con
+    // los nombres y palabras clave de búsqueda en español.
+    function ensureVaultEmojiPicker() {
+      const holder = document.getElementById('vault-emoji-picker-holder');
+      if (!holder || vaultEmojiPickerEl) return;
+      vaultEmojiPickerEl = document.createElement('emoji-picker');
+      vaultEmojiPickerEl.classList.add('dark');
+      vaultEmojiPickerEl.locale = 'es';
+      vaultEmojiPickerEl.dataSource = 'https://cdn.jsdelivr.net/npm/emoji-picker-element-data@^1/es/emojibase/data.json';
+      vaultEmojiPickerEl.i18n = VAULT_EMOJI_PICKER_I18N_ES;
+      vaultEmojiPickerEl.addEventListener('emoji-click', (event) => {
+        const chosen = event.detail && event.detail.unicode;
+        if (chosen) saveVaultItemIcon(chosen);
+      });
+      holder.innerHTML = '';
+      holder.appendChild(vaultEmojiPickerEl);
+    }
+
+    function setVaultIconTab(tab) {
+      vaultIconActiveTab = tab;
+      const emojiPanel = document.getElementById('vault-icon-tab-emoji');
+      const imagenPanel = document.getElementById('vault-icon-tab-imagen');
+      const btnEmoji = document.getElementById('vault-icon-tab-btn-emoji');
+      const btnImagen = document.getElementById('vault-icon-tab-btn-imagen');
+      const activeClasses = ['bg-[#7000ff]/20', 'text-[#00f0ff]', 'border', 'border-[#00f0ff]/30'];
+      const inactiveClasses = ['text-gray-400', 'hover:bg-gray-900'];
+      if (emojiPanel && imagenPanel) {
+        emojiPanel.classList.toggle('hidden', tab !== 'emoji');
+        imagenPanel.classList.toggle('hidden', tab !== 'imagen');
+      }
+      if (btnEmoji && btnImagen) {
+        [btnEmoji, btnImagen].forEach(b => { activeClasses.concat(inactiveClasses).forEach(c => b.classList.remove(c)); });
+        const activeBtn = tab === 'emoji' ? btnEmoji : btnImagen;
+        const inactiveBtn = tab === 'emoji' ? btnImagen : btnEmoji;
+        activeClasses.forEach(c => activeBtn.classList.add(c));
+        inactiveClasses.forEach(c => inactiveBtn.classList.add(c));
+      }
+      if (tab === 'emoji') ensureVaultEmojiPicker();
+    }
+
+    function resetVaultIconImageTab() {
+      vaultIconDraftImageData = null;
+      const input = document.getElementById('vault-icon-image-input');
+      const wrap = document.getElementById('vault-icon-image-preview-wrap');
+      const preview = document.getElementById('vault-icon-image-preview');
+      if (input) input.value = '';
+      if (wrap) wrap.classList.add('hidden');
+      if (preview) preview.src = '';
+    }
+
+    // Abre el selector para cambiar el icono (emoji o imagen) de UN registro
+    // puntual del historial, sin necesidad de entrar al modo edición completo.
+    function openVaultIconPicker(itemId) {
+      const item = vaultItems.find(v => v.id === itemId);
+      if (!item) return;
+      vaultIconTargetId = itemId;
+      resetVaultIconImageTab();
+      const removeBtn = document.getElementById('vault-icon-remove-btn');
+      if (removeBtn) removeBtn.classList.toggle('hidden', !item.icon);
+      setVaultIconTab('emoji');
+      const modal = document.getElementById('vault-icon-modal');
+      const content = document.getElementById('vault-icon-content');
+      if (modal && content) {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+          modal.classList.remove('opacity-0');
+          content.classList.remove('scale-95');
+        }, 10);
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeVaultIconModal() {
+      const modal = document.getElementById('vault-icon-modal');
+      const content = document.getElementById('vault-icon-content');
+      if (modal && content) {
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+      }
+      vaultIconTargetId = null;
+      resetVaultIconImageTab();
+    }
+
+    // Recorta y comprime la imagen elegida a un icono pequeño y cuadrado (mismo
+    // patrón que se usa para las fotos adjuntas, pero a un tamaño mucho menor,
+    // ya que aquí solo se usa como icono de 48x48 en la lista del historial).
+    function vaultIconHandleImageSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onerror = () => window.alert('No se pudo leer la imagen seleccionada. Intenta con otra foto.');
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onerror = () => window.alert('No se pudo procesar esta imagen. Intenta con otra foto.');
+        img.onload = () => {
+          const size = 128;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          // Recorte centrado tipo "cover", para que el icono quede cuadrado sin
+          // deformar la imagen original.
+          const minSide = Math.min(img.width, img.height);
+          const sx = (img.width - minSide) / 2;
+          const sy = (img.height - minSide) / 2;
+          ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+          vaultIconDraftImageData = canvas.toDataURL('image/jpeg', 0.8);
+          const wrap = document.getElementById('vault-icon-image-preview-wrap');
+          const preview = document.getElementById('vault-icon-image-preview');
+          if (preview) preview.src = vaultIconDraftImageData;
+          if (wrap) wrap.classList.remove('hidden');
+          saveVaultItemIcon(vaultIconDraftImageData);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Guarda el icono elegido (emoji o imagen ya comprimida) directamente en
+    // Firestore, para el registro que se estaba editando desde el historial.
+    async function saveVaultItemIcon(iconValue) {
+      const id = vaultIconTargetId;
+      if (!id || !iconValue) return;
+      try {
+        await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'vaultItems', id), { icon: iconValue });
+        closeVaultIconModal();
+      } catch (error) {
+        console.error('Error al guardar el icono del registro de la Bóveda:', error);
+        window.alert('No se pudo guardar el icono. Intenta de nuevo.');
+      }
+    }
+
+    // Quita el icono personalizado y regresa al icono/miniatura por defecto.
+    async function removeVaultItemIcon() {
+      const id = vaultIconTargetId;
+      if (!id) return;
+      try {
+        await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'vaultItems', id), { icon: null });
+        closeVaultIconModal();
+      } catch (error) {
+        console.error('Error al quitar el icono del registro de la Bóveda:', error);
+        window.alert('No se pudo quitar el icono. Intenta de nuevo.');
+      }
+    }
+
     window.openVaultPinModal = openVaultPinModal;
     window.closeVaultPinModal = closeVaultPinModal;
     window.openVaultPatternSetupModal = openVaultPatternSetupModal;
@@ -13428,6 +13736,12 @@
     window.startEditVaultItem = startEditVaultItem;
     window.cancelEditVaultItem = cancelEditVaultItem;
     window.saveEditVaultItem = saveEditVaultItem;
+    window.openVaultIconPicker = openVaultIconPicker;
+    window.closeVaultIconModal = closeVaultIconModal;
+    window.setVaultIconTab = setVaultIconTab;
+    window.vaultIconHandleImageSelect = vaultIconHandleImageSelect;
+    window.saveVaultItemIcon = saveVaultItemIcon;
+    window.removeVaultItemIcon = removeVaultItemIcon;
     window.vaultEditHandleImageSelect = vaultEditHandleImageSelect;
 
     async function moveTaskUp(id) {
@@ -13602,6 +13916,7 @@
         closeTaskCalendarPrompt();
         closeNotesTrashModal();
         closeCalcWidgetModal();
+        if (window.closeVaultIconModal) window.closeVaultIconModal();
         if (window.closeMascotSettingsModal) window.closeMascotSettingsModal();
         if (window.cancelMascotNoteBox) window.cancelMascotNoteBox();
         const profileMenu = document.getElementById('profile-dropdown-menu');
@@ -13668,7 +13983,8 @@
       { id: 'vault-pin-modal', closeFunc: () => window.closeVaultPinModal() },
       { id: 'vault-pattern-setup-modal', closeFunc: () => window.closeVaultPatternSetupModal() },
       { id: 'vault-modal', closeFunc: () => window.closeVaultModal() },
-      { id: 'vault-view-modal', closeFunc: () => window.closeVaultViewModal() }
+      { id: 'vault-view-modal', closeFunc: () => window.closeVaultViewModal() },
+      { id: 'vault-icon-modal', closeFunc: () => window.closeVaultIconModal() }
     ];
 
     modalContainers.forEach(modal => {
@@ -14704,7 +15020,7 @@
         'confirm-modal', 'hover-images-modal', 'diecast-view-modal', 'movement-view-modal', 'category-summary-modal',
         'notification-settings-modal', 'task-calendar-modal', 'notes-trash-modal',
         'calc-widget-modal', 'mascot-settings-modal', 'vault-pin-modal', 'vault-modal', 'vault-view-modal',
-        'vault-pattern-setup-modal', 'calendar-settings-modal'];
+        'vault-icon-modal', 'vault-pattern-setup-modal', 'calendar-settings-modal'];
       for (var i = 0; i < ids.length; i++) {
         var el = document.getElementById(ids[i]);
         if (el && !el.classList.contains('hidden')) return true;
