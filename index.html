@@ -312,10 +312,12 @@
     }
 
     .sticky-note-textarea {
-      flex: 1;
-      min-height: 0;
+      flex: 0 0 auto;
+      min-height: 105px;
       width: 100%;
+      height: 105px;
       resize: none;
+      overflow-y: hidden;
       background-color: rgba(255,255,255,0.25);
       /* Mismas líneas de cuaderno que el modo lectura, para previsualizar en vivo el control de intensidad */
       background-image: repeating-linear-gradient(to bottom, transparent 0px, transparent 20px, var(--note-line-color, rgba(0,0,0,0.12)) 21px);
@@ -339,7 +341,17 @@
 
     /* Tarjeta en modo edición/creación: altura mínima reducida para poder hacer notas pequeñas.
        Si el espacio no alcanza para todos los controles, se puede desplazar dentro de la nota. */
-    .sticky-note-editing { min-height: 120px; overflow-y: auto; }
+    .sticky-note-editing {
+      min-height: 220px;
+      overflow: visible;
+    }
+
+    /* En edición/creación, el área de texto crece con el contenido para que el texto
+       existente siempre sea visible y escribir varias líneas no lo esconda. */
+    .sticky-note-editing .sticky-note-textarea {
+      min-height: 105px;
+      max-height: 420px;
+    }
 
     /* Manija de redimensionado (esquina inferior derecha), visible solo mientras se edita la nota */
     .sticky-note-resize-handle {
@@ -10847,12 +10859,14 @@
 
         if (isEditingThis) {
           const w = (typeof n.width === 'number') ? n.width : NOTE_W;
-          const h = (typeof n.height === 'number') ? n.height : 232;
+          const textLines = String(n.text || '').split('\n').length;
+          const estimatedTextHeight = Math.max(105, Math.min(420, 36 + textLines * 21));
+          const h = (typeof n.height === 'number') ? Math.max(n.height, estimatedTextHeight + 105) : Math.max(280, estimatedTextHeight + 105);
           const sizeStyle = `width:${w}px; height:${h}px;`;
           const style = buildItemStyle(noteDraft.palette, noteDraft.color, noteDraft.opacity, 'note', noteDraft.lineOpacity, noteDraft.font) + posStyle + sizeStyle;
           container.innerHTML += `
             <div id="note-card-edit-${n.id}" class="sticky-note sticky-note-editing ${rotClass}" style="${style}">
-              <textarea id="note-edit-input-${n.id}" maxlength="300" class="sticky-note-textarea">${escapeHtml(n.text)}</textarea>
+              <textarea id="note-edit-input-${n.id}" maxlength="300" class="sticky-note-textarea" oninput="window.autoGrowStickyNoteText(this)">${escapeHtml(n.text)}</textarea>
               <div id="note-picker-edit-${n.id}">${colorPickerHtml('note', noteDraft.palette, noteDraft.color, noteDraft.opacity, noteDraft.lineOpacity, noteDraft.font)}</div>
               <div class="flex justify-end gap-1 mt-2">
                 <button onclick="window.saveEditNote('${n.id}')" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Guardar">
@@ -10896,7 +10910,7 @@
           `position:absolute; left:${pos.x}px; top:${pos.y}px; z-index:${stickyNoteZCounter + 1};`;
         container.innerHTML += `
           <div id="note-card-new" class="sticky-note sticky-note-editing sticky-note-rot-1" style="${style}">
-            <textarea id="note-new-input" maxlength="300" placeholder="Escribe tu nota..." class="sticky-note-textarea"></textarea>
+            <textarea id="note-new-input" maxlength="300" placeholder="Escribe tu nota..." class="sticky-note-textarea" oninput="window.autoGrowStickyNoteText(this)"></textarea>
             <div id="note-picker-new">${colorPickerHtml('note', noteDraft.palette, noteDraft.color, noteDraft.opacity, noteDraft.lineOpacity, noteDraft.font)}</div>
             <div class="flex justify-end gap-1 mt-2">
               <button onclick="window.saveNewNote()" class="p-1 hover:opacity-70 transition-opacity flex-shrink-0" title="Guardar">
@@ -11123,6 +11137,7 @@
       editingNoteId = null;
       noteDraft = { ...DEFAULT_ITEM_STYLE, lineOpacity: DEFAULT_NOTE_LINE_OPACITY };
       renderStickyNotes();
+      requestAnimationFrame(() => autoGrowStickyNoteText(document.getElementById('note-new-input')));
     }
 
     function cancelAddNote() {
@@ -12663,6 +12678,7 @@
       creatingNewNote = false;
       editingNoteId = id;
       renderStickyNotes();
+      requestAnimationFrame(() => autoGrowStickyNoteText(document.getElementById(`note-edit-input-${id}`)));
     }
 
     function cancelEditNote() {
@@ -12670,7 +12686,30 @@
       renderStickyNotes();
     }
 
-    async function saveEditNote(id) {
+    function autoGrowStickyNoteText(textarea) {
+      if (!textarea) return;
+      textarea.style.height = 'auto';
+      const styles = window.getComputedStyle(textarea);
+      const minHeight = parseFloat(styles.minHeight) || 105;
+      const maxHeight = parseFloat(styles.maxHeight) || 420;
+      const nextHeight = Math.max(minHeight, Math.min(maxHeight, textarea.scrollHeight));
+      textarea.style.height = nextHeight + 'px';
+      const card = textarea.closest('.sticky-note-editing');
+      if (card) {
+        const fixedControls = Array.from(card.children)
+          .filter(el => el !== textarea && !el.classList.contains('sticky-note-resize-handle'))
+          .reduce((sum, el) => sum + el.offsetHeight, 0);
+        const needed = Math.max(220, nextHeight + fixedControls + 28);
+        if (card.offsetHeight < needed) card.style.height = needed + 'px';
+      }
+      const grid = document.getElementById('sticky-notes-grid');
+      if (grid && card) {
+        const neededGridHeight = card.offsetTop + card.offsetHeight + 24;
+        if (neededGridHeight > grid.offsetHeight) grid.style.height = neededGridHeight + 'px';
+      }
+    }
+
+        async function saveEditNote(id) {
       const input = document.getElementById(`note-edit-input-${id}`);
       const text = input ? input.value.trim() : '';
       if (!text) return;
