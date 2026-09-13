@@ -10241,7 +10241,26 @@
     function applyTableNoteDraftUI(rebuildPicker) {
       const suffix = editingTableNoteId ? `edit-${editingTableNoteId}` : 'new';
       const card = document.getElementById(`table-note-card-${suffix}`);
-      if (card) card.setAttribute('style', buildItemStyle(tableNoteDraft.palette, tableNoteDraft.color, tableNoteDraft.opacity, 'note', 0, tableNoteDraft.font));
+      if (card) {
+        // Actualiza únicamente la apariencia de la tabla sin borrar posición, tamaño
+        // ni la geometría de redimensionado que ya tenga la tarjeta.
+        const visualStyle = buildItemStyle(
+          tableNoteDraft.palette,
+          tableNoteDraft.color,
+          tableNoteDraft.opacity,
+          'note',
+          0,
+          tableNoteDraft.font
+        );
+        card.style.cssText = visualStyle +
+          `position:${card.style.position || 'absolute'};` +
+          `left:${card.style.left || '0px'};` +
+          `top:${card.style.top || '0px'};` +
+          `z-index:${card.style.zIndex || '1'};` +
+          (card.style.width ? `width:${card.style.width};` : '') +
+          (card.style.height ? `height:${card.style.height};` : '') +
+          (card.style.minHeight ? `min-height:${card.style.minHeight};` : '');
+      }
       if (rebuildPicker) {
         const pickerContainer = document.getElementById(`table-note-picker-${suffix}`);
         if (pickerContainer) {
@@ -11509,22 +11528,16 @@
         opacity: tableNoteDraft.opacity,
         font: tableNoteDraft.font
       };
-      if (card && input) {
-        // Al guardar, recalcula el tamaño NATURAL según el texto actual.
-        // No reutilizamos la altura temporal de edición, porque puede haberse
-        // inflado para que cupieran los controles mientras se escribía.
-        input.style.height = 'auto';
-        const textHeight = Math.max(42, input.scrollHeight);
-        input.style.height = textHeight + 'px';
 
-        const fixedControls = Array.from(card.children)
-          .filter(el => el !== input && !el.classList.contains('sticky-note-resize-handle'))
-          .reduce((sum, el) => sum + el.offsetHeight, 0);
-        const naturalHeight = Math.max(76, textHeight + fixedControls + 18);
-
-        updateData.width = card.offsetWidth;
-        updateData.height = naturalHeight;
+      // Para las notas-tabla conservamos el tamaño actual elegido por el usuario.
+      // Ya no intentamos leer un textarea inexistente (eso provocaba un ReferenceError
+      // y podía impedir que terminara correctamente el modo de edición).
+      if (card) {
+        updateData.width = Math.round(card.offsetWidth);
+        updateData.height = Math.round(card.offsetHeight);
       }
+
+      // Cerrar inmediatamente el modo edición al pulsar la palomita.
       editingTableNoteId = null;
       renderStickyNotes();
       try {
