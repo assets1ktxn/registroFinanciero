@@ -522,43 +522,74 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 20px;
-      height: 20px;
+      width: 19px;
+      height: 19px;
       padding: 0;
-      border: none;
-      border-radius: 5px;
-      background: rgba(0,0,0,0.32);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      background: rgba(0,0,0,0.18);
       color: #fff;
-      opacity: 0.85;
+      opacity: 0.72;
       cursor: pointer;
       flex-shrink: 0;
+      transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
     }
-    .table-note-mini-btn:hover { opacity: 1; background: rgba(0,0,0,0.5); }
+    .table-note-mini-btn:hover { opacity: 1; transform: scale(1.08); background: rgba(0,0,0,0.30); }
+    .table-note-mini-btn:active { transform: scale(0.94); }
     .table-note-mini-btn i { pointer-events: none; }
-    .table-note-mini-btn-add { background: rgba(0,110,255,0.6); }
-    .table-note-mini-btn-add:hover { background: rgba(0,110,255,0.8); }
+    .table-note-mini-btn:not(.table-note-mini-btn-add) {
+      background: rgba(190, 45, 65, 0.24);
+      border-color: rgba(190, 45, 65, 0.34);
+      color: rgba(255, 225, 230, 0.95);
+    }
+    .table-note-mini-btn:not(.table-note-mini-btn-add):hover {
+      background: rgba(190, 45, 65, 0.42);
+      border-color: rgba(230, 80, 100, 0.48);
+    }
+    .table-note-mini-btn-add {
+      background: rgba(0,110,255,0.62);
+      border-color: rgba(100,175,255,0.34);
+      color: #fff;
+    }
+    .table-note-mini-btn-add:hover { background: rgba(0,110,255,0.80); }
     .table-note-add-row-cell {
       grid-column: 1 / -1;
       display: flex;
-      justify-content: center;
-      padding-top: 2px;
+      justify-content: flex-start;
+      align-items: center;
+      padding-top: 3px;
+      padding-left: 2px;
     }
     .table-note-add-row-btn {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      justify-content: center;
+      gap: 4px;
+      min-width: 52px;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(0,110,255,0.50);
+      border: 1px solid rgba(100,175,255,0.34);
+      color: #fff;
+      opacity: 0.78;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-sizing: border-box;
       font-size: 10.5px;
       font-weight: 700;
-      padding: 3px 12px;
-      border-radius: 999px;
-      background: rgba(0,110,255,0.28);
-      border: 1px solid rgba(0,0,0,0.25);
-      color: inherit;
-      opacity: 0.9;
-      cursor: pointer;
+      line-height: 1;
+      white-space: nowrap;
+      transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
     }
-    .table-note-add-row-btn:hover { opacity: 1; background: rgba(0,110,255,0.42); }
-    .table-note-add-row-btn i { pointer-events: none; }
+    .table-note-add-row-btn:hover {
+      opacity: 1;
+      transform: scale(1.08);
+      background: rgba(0,110,255,0.72);
+      border-color: rgba(100,175,255,0.48);
+    }
+    .table-note-add-row-btn:active { transform: scale(0.94); }
+    .table-note-add-row-btn i { pointer-events: none; width: 13px !important; height: 13px !important; }
 
     /* ===== TARJETAS DE CUENTAS: cuadrícula responsiva con reordenamiento por arrastre =====
        #accounts-deck usa la cuadrícula normal de Tailwind (grid-cols-2 en móvil,
@@ -11363,7 +11394,7 @@
         return cells + rowActionCell;
       }).join('');
 
-      const addRowRow = `<div class="table-note-add-row-cell"><button type="button" class="table-note-add-row-btn" onclick="window.addTableNoteRow()" title="Agregar fila"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Fila</button></div>`;
+      const addRowRow = `<div class="table-note-add-row-cell"><button type="button" class="table-note-add-row-btn" onclick="window.addTableNoteRow()" title="Agregar fila" aria-label="Agregar fila"><i data-lucide="plus" class="w-3 h-3"></i><span>Fila</span></button></div>`;
 
       return { html: colHeaderRow + dataRows + addRowRow, cols };
     }
