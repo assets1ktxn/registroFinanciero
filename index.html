@@ -1909,28 +1909,31 @@
     /* Burbuja superior de clima: se usa cuando la voz de Kia está apagada, para que
        el resumen siga visible como un pequeño comentario flotante sin depender de la mascota. */
     .kia-weather-top-bubble {
-      position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-10px) scale(.96);
-      width: min(360px, calc(100vw - 28px)); padding: 10px 13px 11px;
-      border-radius: 18px; background: linear-gradient(135deg, rgba(6,12,27,.97), rgba(16,10,34,.97));
-      border: 1px solid rgba(0,240,255,.30); box-shadow: 0 12px 28px rgba(0,0,0,.40), 0 0 20px rgba(0,240,255,.12);
-      color: #f3f4f6; opacity: 0; pointer-events:none; z-index: 9998;
-      transition: opacity .28s ease, transform .28s cubic-bezier(.16,1,.3,1);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      position: relative; top: auto; left: auto; transform: none; flex: 0 1 250px; width: 250px; min-width: 0;
+      padding: 7px 9px 8px; border-radius: 14px;
+      background: rgba(3, 7, 18, 0.78);
+      border: 1px solid rgba(0,240,255,.22);
+      box-shadow: 0 0 14px rgba(0,240,255,.08), inset 0 0 10px rgba(255,255,255,.02);
+      color: #f3f4f6; opacity: 0; pointer-events:none; z-index: 1;
+      transition: opacity .28s ease, transform .28s ease, border-color .2s ease;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      box-sizing: border-box;
     }
-    .kia-weather-top-bubble.kia-weather-top-visible { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-    .kia-weather-top-accent { position:absolute; top:0; left:22px; right:22px; height:2px; border-radius:999px; background:linear-gradient(90deg, rgba(0,240,255,0), rgba(0,240,255,.85), rgba(112,0,255,.7), rgba(0,240,255,0)); }
-    .kia-weather-top-main { display:flex; align-items:center; gap:9px; }
-    .kia-weather-top-icon { width:31px; height:31px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.16); font-size:18px; }
+    .kia-weather-top-bubble.kia-weather-top-visible { opacity: 1; transform: none; }
+    .kia-weather-top-bubble:hover { border-color: rgba(0,240,255,.38); }
+    .kia-weather-top-accent { position:absolute; top:0; left:18px; right:18px; height:2px; border-radius:999px; background:linear-gradient(90deg, rgba(0,240,255,0), rgba(0,240,255,.75), rgba(112,0,255,.65), rgba(0,240,255,0)); }
+    .kia-weather-top-main { display:flex; align-items:center; gap:7px; }
+    .kia-weather-top-icon { width:27px; height:27px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.16); font-size:15px; }
     .kia-weather-top-copy { min-width:0; }
-    .kia-weather-top-title { font-size:10px; font-weight:850; text-transform:uppercase; letter-spacing:.08em; color:#67e8f9; line-height:1.1; }
-    .kia-weather-top-location { margin-top:2px; font-size:9px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:270px; }
-    .kia-weather-top-summary { margin-top:8px; display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:7px; }
-    .kia-weather-top-rain { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11px; font-weight:800; color:#e5e7eb; }
-    .kia-weather-top-temp { display:inline-flex; align-items:center; padding:4px 7px; border-radius:999px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); font-size:10px; font-weight:750; color:#e5e7eb; white-space:nowrap; }
-    @media (max-width: 480px) {
-      .kia-weather-top-bubble { top: 10px; width: calc(100vw - 20px); padding: 9px 11px 10px; }
+    .kia-weather-top-title { font-size:9px; font-weight:850; text-transform:uppercase; letter-spacing:.08em; color:#67e8f9; line-height:1.1; }
+    .kia-weather-top-location { margin-top:2px; font-size:8px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:185px; }
+    .kia-weather-top-summary { margin-top:6px; display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:5px; }
+    .kia-weather-top-rain { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px; font-weight:800; color:#e5e7eb; }
+    .kia-weather-top-temp { display:inline-flex; align-items:center; padding:3px 5px; border-radius:999px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); font-size:9px; font-weight:750; color:#e5e7eb; white-space:nowrap; }
+    @media (max-width: 700px) {
+      .kia-weather-top-bubble { flex: 1 1 100%; width: 100%; max-width: none; order: 3; }
       .kia-weather-top-summary { gap: 5px; }
-      .kia-weather-top-location { max-width: 210px; }
+      .kia-weather-top-location { max-width: none; }
     }
 
     .mascot-speech-bubble {
@@ -3293,7 +3296,7 @@
   <div id="app-container" class="max-w-6xl mx-auto space-y-8 hidden animate-fade-in">
     
     <!-- HEADER -->
-    <header class="relative z-40 flex flex-wrap items-center justify-between gap-4 mb-8 glass-card p-4 md:p-6 rounded-2xl border border-[#7000ff]/15">
+    <header class="sticky top-2 relative z-40 flex flex-wrap items-center justify-between gap-4 mb-8 glass-card p-4 md:p-6 rounded-2xl border border-[#7000ff]/15">
       <div class="flex items-center gap-4">
         <div class="p-3 bg-[#7000ff]/15 text-[#00f0ff] rounded-xl border border-[#00f0ff]/20 shadow-md shadow-[#00f0ff]/5">
           <svg viewBox="0 0 100 100" class="w-7 h-7 filter drop-shadow-[0_0_6px_rgba(0,240,255,0.6)]" aria-hidden="true">
@@ -3314,6 +3317,22 @@
         <button id="theme-toggle" class="p-2.5 md:p-3 bg-gray-950/80 border border-gray-800 rounded-xl hover:border-[#00f0ff]/30 transition-colors text-gray-400 hover:text-[#00f0ff]" title="Alternar tema (Claro / Oscuro / Automático)">
           <i data-lucide="sun" id="theme-icon" class="w-5 h-5"></i>
         </button>
+
+          <div id="kia-weather-top-bubble" class="kia-weather-top-bubble" aria-hidden="true">
+            <div class="kia-weather-top-accent"></div>
+            <div class="kia-weather-top-main">
+              <span id="kia-weather-top-icon" class="kia-weather-top-icon">🌤️</span>
+              <div class="kia-weather-top-copy">
+                <div class="kia-weather-top-title">Clima de hoy</div>
+                <div id="kia-weather-top-location" class="kia-weather-top-location">San Buenaventura · Ixtapaluca</div>
+              </div>
+            </div>
+            <div class="kia-weather-top-summary">
+              <span id="kia-weather-top-rain" class="kia-weather-top-rain">Consultando…</span>
+              <span id="kia-weather-top-min" class="kia-weather-top-temp">↓ --°</span>
+              <span id="kia-weather-top-max" class="kia-weather-top-temp">↑ --°</span>
+            </div>
+          </div>
 
         <!-- KIA: activar/desactivar + micrófono para llamarla, todo en un solo control -->
         <div class="header-kia-pill" title="Kia">
@@ -15801,21 +15820,7 @@
         <span id="kia-weather-intro-max" class="kia-weather-intro-temp">↑ --°</span>
       </div>
     </div>
-  <div id="kia-weather-top-bubble" class="kia-weather-top-bubble" aria-hidden="true">
-    <div class="kia-weather-top-accent"></div>
-    <div class="kia-weather-top-main">
-      <span id="kia-weather-top-icon" class="kia-weather-top-icon">🌤️</span>
-      <div class="kia-weather-top-copy">
-        <div class="kia-weather-top-title">Clima de hoy</div>
-        <div id="kia-weather-top-location" class="kia-weather-top-location">San Buenaventura · Ixtapaluca</div>
-      </div>
-    </div>
-    <div class="kia-weather-top-summary">
-      <span id="kia-weather-top-rain" class="kia-weather-top-rain">Consultando…</span>
-      <span id="kia-weather-top-min" class="kia-weather-top-temp">↓ --°</span>
-      <span id="kia-weather-top-max" class="kia-weather-top-temp">↑ --°</span>
-    </div>
-  </div>
+
     <div id="mascot-speech-bubble" class="mascot-speech-bubble"></div>
     <div id="mascot-aura-glow" class="mascot-aura-glow"></div>
     <div id="mascot-sprite" class="mascot-sprite"></div>
@@ -18058,11 +18063,8 @@
       weatherIntroMinEl = document.getElementById('kia-weather-intro-min');
       weatherIntroMaxEl = document.getElementById('kia-weather-intro-max');
       weatherTopBubbleEl = document.getElementById('kia-weather-top-bubble');
-      // La burbuja del clima debe ser independiente de la visibilidad de Kia.
-      // Se mueve al <body> porque #mascot-wolf se oculta cuando el asistente está apagado.
-      if (weatherTopBubbleEl && weatherTopBubbleEl.parentElement === wolfEl) {
-        document.body.appendChild(weatherTopBubbleEl);
-      }
+      // El panel superior del clima forma parte del encabezado y permanece allí
+      // independientemente de la visibilidad de Kia.
       weatherTopIconEl = document.getElementById('kia-weather-top-icon');
       weatherTopLocationEl = document.getElementById('kia-weather-top-location');
       weatherTopRainEl = document.getElementById('kia-weather-top-rain');
