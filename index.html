@@ -41,7 +41,7 @@
   <!-- Fuentes adicionales para Notas Adhesivas y Tareas (la fuente por defecto sigue siendo Comic Sans MS/Segoe Print, de sistema) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Kalam:wght@400&family=Patrick+Hand&family=Poppins:wght@500&family=Lora:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Sans:wght@500;600&family=Inter:wght@500;600&family=Kalam:wght@400;500&family=Lora:wght@400;500&family=Manrope:wght@500;600&family=Nunito:wght@500;600&family=Patrick+Hand&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
 
   <style>
     body {
@@ -10399,20 +10399,28 @@
     // ===== PALETAS DE COLOR PERSONALIZABLES (Pastel / Neón) =====
     const COLOR_PALETTES = {
       pastel: {
-        yellow: { bg: '244,224,77',  text: '#3a3410', line: '80,70,0' },
-        pink:   { bg: '245,166,201', text: '#4a1230', line: '110,10,60' },
-        cyan:   { bg: '143,227,240', text: '#0a3a42', line: '0,70,85' },
-        green:  { bg: '168,230,161', text: '#163a15', line: '15,80,15' },
-        purple: { bg: '203,176,240', text: '#2e1252', line: '60,15,100' },
-        orange: { bg: '247,192,122', text: '#4a2600', line: '120,60,0' }
+        yellow:  { bg: '244,224,77',  text: '#3a3410', line: '80,70,0' },
+        pink:    { bg: '245,166,201', text: '#4a1230', line: '110,10,60' },
+        cyan:    { bg: '143,227,240', text: '#0a3a42', line: '0,70,85' },
+        green:   { bg: '168,230,161', text: '#163a15', line: '15,80,15' },
+        purple:  { bg: '203,176,240', text: '#2e1252', line: '60,15,100' },
+        orange:  { bg: '247,192,122', text: '#4a2600', line: '120,60,0' },
+        red:     { bg: '244,151,151', text: '#4a1010', line: '115,20,20' },
+        blue:    { bg: '151,190,245', text: '#10284a', line: '20,65,125' },
+        mint:    { bg: '155,232,208', text: '#0e3b31', line: '10,95,75' },
+        lavender:{ bg: '220,196,250', text: '#32174c', line: '90,45,135' }
       },
       neon: {
-        cyan:   { bg: '0,240,255',  text: '#022329', line: '0,120,130' },
-        pink:   { bg: '255,0,127',  text: '#3a0018', line: '140,0,60' },
-        purple: { bg: '112,0,255',  text: '#f3e8ff', line: '60,0,140' },
-        yellow: { bg: '250,255,0',  text: '#2e2f00', line: '120,120,0' },
-        green:  { bg: '57,255,20',  text: '#0a2e05', line: '20,110,10' },
-        orange: { bg: '255,140,0',  text: '#331c00', line: '140,70,0' }
+        cyan:    { bg: '0,240,255',   text: '#022329', line: '0,120,130' },
+        pink:    { bg: '255,0,127',   text: '#3a0018', line: '140,0,60' },
+        purple:  { bg: '112,0,255',   text: '#f3e8ff', line: '60,0,140' },
+        yellow:  { bg: '250,255,0',   text: '#2e2f00', line: '120,120,0' },
+        green:   { bg: '57,255,20',   text: '#0a2e05', line: '20,110,10' },
+        orange:  { bg: '255,140,0',   text: '#331c00', line: '140,70,0' },
+        red:     { bg: '255,55,75',   text: '#3b0008', line: '150,20,35' },
+        blue:    { bg: '45,145,255',  text: '#031a36', line: '20,80,160' },
+        mint:    { bg: '0,255,190',   text: '#00382d', line: '0,120,90' },
+        indigo:  { bg: '72,92,255',   text: '#f1f3ff', line: '35,45,150' }
       }
     };
     // ===== TIPOGRAFÍAS PERSONALIZABLES (Notas y Tareas) =====
@@ -10423,7 +10431,11 @@
       clara:      { label: 'Letra clara',             family: "'Patrick Hand', 'Comic Sans MS', cursive" },
       elegante:   { label: 'Elegante',                family: "'Caveat', 'Segoe Script', cursive" },
       moderna:    { label: 'Moderna',                 family: "'Poppins', ui-sans-serif, sans-serif" },
-      clasica:    { label: 'Clásica',                 family: "'Lora', Georgia, serif" }
+      clasica:    { label: 'Clásica',                 family: "'Lora', Georgia, serif" },
+      limpia:     { label: 'Limpia',                  family: "'Inter', ui-sans-serif, sans-serif" },
+      suave:      { label: 'Suave',                   family: "'Nunito', ui-sans-serif, sans-serif" },
+      editorial:  { label: 'Editorial',               family: "'Manrope', ui-sans-serif, sans-serif" },
+      compacta:   { label: 'Compacta',                family: "'DM Sans', ui-sans-serif, sans-serif" }
     };
     const DEFAULT_FONT = 'manuscrita';
 
