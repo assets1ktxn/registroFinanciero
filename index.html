@@ -4211,6 +4211,9 @@
     .account-bank-copy:hover{transform:scale(1.05);background:rgba(0,240,255,.17);border-color:rgba(0,240,255,.35);color:#fff}
     .account-bank-copy.copied{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.30);color:#6ee7b7}
     .account-bank-empty{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;border-radius:15px;border:1px dashed rgba(0,240,255,.22);background:rgba(0,240,255,.04);color:#9ca3af;font-size:10px;line-height:1.35}
+    /* La clase .hidden de Tailwind debe poder ocultar estos bloques aunque tengan display propio. */
+    .account-bank-empty.hidden,.account-bank-status.hidden,.account-bank-cards.hidden{display:none!important}
+    .account-bank-status{display:flex;align-items:center;gap:7px;padding:9px 11px;margin-bottom:8px;border-radius:15px;border:1px solid rgba(16,185,129,.18);background:rgba(16,185,129,.07);color:#a7f3d0;font-size:10px;font-weight:700;line-height:1.35}
     .account-bank-edit-panel{display:none;gap:9px;flex-direction:column}.account-bank-edit-panel.open{display:flex}
     .account-bank-field{display:flex;flex-direction:column;gap:5px}
     .account-bank-input{width:100%;min-width:0;background:rgba(3,7,18,.78);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:9px 10px;color:#fff;font-size:12px;font-weight:650;outline:none;transition:border-color .15s ease,box-shadow .15s ease}
@@ -4255,16 +4258,17 @@
           </div>
 
           <div id="account-bank-display">
-            <div id="account-bank-empty" class="account-bank-empty hidden">
-              <span><i data-lucide="credit-card" class="w-3.5 h-3.5 inline-block mr-1.5 align-[-2px]"></i>No hay datos bancarios registrados.</span>
-              <span class="text-cyan-300 font-bold">Agrégalos aquí</span>
+            <div id="account-bank-empty" class="account-bank-empty">
+              <span><i data-lucide="credit-card" class="w-3.5 h-3.5 inline-block mr-1.5 align-[-2px]"></i>Aún no has registrado datos bancarios.</span>
+              <button type="button" class="text-cyan-300 font-bold" onclick="window.toggleAccountBankEdit(true)">Agregar aquí</button>
             </div>
-            <div id="account-bank-cards" class="account-bank-cards">
-              <div class="account-bank-card">
+            <div id="account-bank-status" class="account-bank-status hidden"></div>
+            <div id="account-bank-cards" class="account-bank-cards hidden">
+              <div id="account-bank-card-number" class="account-bank-card">
                 <div class="min-w-0"><span class="account-bank-label">Número de cuenta</span><span id="detail-acc-account-number" class="account-bank-value">—</span></div>
                 <button type="button" class="account-bank-copy" onclick="window.copyAccountBankField('numeroCuenta', this)" aria-label="Copiar número de cuenta" title="Copiar número de cuenta"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
               </div>
-              <div class="account-bank-card">
+              <div id="account-bank-card-clabe" class="account-bank-card">
                 <div class="min-w-0"><span class="account-bank-label">Cuenta CLABE</span><span id="detail-acc-clabe" class="account-bank-value">—</span></div>
                 <button type="button" class="account-bank-copy" onclick="window.copyAccountBankField('clabe', this)" aria-label="Copiar CLABE" title="Copiar CLABE"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
               </div>
@@ -7497,22 +7501,43 @@
     let currentDetailAccountId = null;
 
     function renderAccountBankDetails(acc) {
-      const accountNumber = String(acc?.numeroCuenta || '').trim();
-      const clabe = String(acc?.clabe || '').trim();
+      // Compatibilidad con nombres alternos por si alguna versión anterior guardó estos campos así.
+      const accountNumber = String(acc?.numeroCuenta ?? acc?.accountNumber ?? acc?.numero_de_cuenta ?? '').trim();
+      const clabe = String(acc?.clabe ?? acc?.cuentaClabe ?? acc?.accountCLABE ?? acc?.accountClabe ?? '').trim();
+      const hasNumber = !!accountNumber;
+      const hasClabe = !!clabe;
+      const hasAny = hasNumber || hasClabe;
       const numberEl = document.getElementById('detail-acc-account-number');
       const clabeEl = document.getElementById('detail-acc-clabe');
       const cardsEl = document.getElementById('account-bank-cards');
       const emptyEl = document.getElementById('account-bank-empty');
+      const statusEl = document.getElementById('account-bank-status');
+      const numberCard = document.getElementById('account-bank-card-number');
+      const clabeCard = document.getElementById('account-bank-card-clabe');
       const inputNumber = document.getElementById('account-details-account-number');
       const inputClabe = document.getElementById('account-details-clabe');
       const label = document.getElementById('btn-account-bank-edit-label');
+
       if (numberEl) numberEl.textContent = accountNumber || 'No registrado';
       if (clabeEl) clabeEl.textContent = clabe || 'No registrado';
-      if (cardsEl) cardsEl.classList.toggle('hidden', !(accountNumber || clabe));
-      if (emptyEl) emptyEl.classList.toggle('hidden', !!(accountNumber || clabe));
+      if (numberCard) numberCard.classList.toggle('hidden', !hasNumber);
+      if (clabeCard) clabeCard.classList.toggle('hidden', !hasClabe);
+      if (cardsEl) cardsEl.classList.toggle('hidden', !hasAny);
+      if (emptyEl) emptyEl.classList.toggle('hidden', hasAny);
+      if (statusEl) {
+        if (hasAny) {
+          const registered = hasNumber && hasClabe ? 'número de cuenta y CLABE' : (hasNumber ? 'número de cuenta' : 'CLABE');
+          statusEl.innerHTML = '<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-300 flex-shrink-0"></i><span>¡Listo! Ya tienes registrado tu ' + registered + '. Puedes copiarlo rápidamente.</span>';
+          statusEl.classList.remove('hidden');
+        } else {
+          statusEl.classList.add('hidden');
+          statusEl.innerHTML = '';
+        }
+      }
       if (inputNumber) inputNumber.value = accountNumber;
       if (inputClabe) inputClabe.value = clabe;
-      if (label) label.textContent = (accountNumber || clabe) ? 'Editar' : 'Agregar';
+      if (label) label.textContent = hasAny ? 'Editar' : 'Agregar';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function toggleAccountBankEdit(force) {
