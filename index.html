@@ -4195,6 +4195,31 @@
     </div>
   </div>
 
+  <style>
+    /* ===== DATOS BANCARIOS EN DETALLE DE CUENTA ===== */
+    .account-bank-section{background:linear-gradient(135deg,rgba(0,240,255,.07),rgba(112,0,255,.10));border:1px solid rgba(0,240,255,.18);border-radius:22px;padding:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 28px rgba(0,0,0,.18)}
+    .account-bank-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .account-bank-heading-main{display:flex;align-items:center;gap:8px;min-width:0}
+    .account-bank-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(0,240,255,.10);border:1px solid rgba(0,240,255,.16);color:#00f0ff;flex-shrink:0}
+    .account-bank-edit-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);color:#cbd5e1;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s ease;flex-shrink:0}
+    .account-bank-edit-btn:hover{color:#fff;border-color:rgba(0,240,255,.35);background:rgba(0,240,255,.09);transform:translateY(-1px)}
+    .account-bank-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .account-bank-card{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:9px 10px;border-radius:15px;background:rgba(3,7,18,.72);border:1px solid rgba(255,255,255,.08)}
+    .account-bank-label{display:block;color:#6b7280;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+    .account-bank-value{display:block;color:#f8fafc;font-size:12px;font-weight:800;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .account-bank-copy{width:29px;height:29px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(0,240,255,.10);border:1px solid rgba(0,240,255,.15);color:#9cefff;cursor:pointer;transition:all .15s ease;flex-shrink:0}
+    .account-bank-copy:hover{transform:scale(1.05);background:rgba(0,240,255,.17);border-color:rgba(0,240,255,.35);color:#fff}
+    .account-bank-copy.copied{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.30);color:#6ee7b7}
+    .account-bank-empty{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;border-radius:15px;border:1px dashed rgba(0,240,255,.22);background:rgba(0,240,255,.04);color:#9ca3af;font-size:10px;line-height:1.35}
+    .account-bank-edit-panel{display:none;gap:9px;flex-direction:column}.account-bank-edit-panel.open{display:flex}
+    .account-bank-field{display:flex;flex-direction:column;gap:5px}
+    .account-bank-input{width:100%;min-width:0;background:rgba(3,7,18,.78);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:9px 10px;color:#fff;font-size:12px;font-weight:650;outline:none;transition:border-color .15s ease,box-shadow .15s ease}
+    .account-bank-input:focus{border-color:rgba(0,240,255,.45);box-shadow:0 0 0 3px rgba(0,240,255,.07)}.account-bank-input::placeholder{color:#4b5563}
+    .account-bank-save{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:9px 12px;border:1px solid rgba(0,240,255,.25);border-radius:12px;background:linear-gradient(90deg,rgba(0,240,255,.16),rgba(112,0,255,.18));color:#fff;font-size:10px;font-weight:800;cursor:pointer;transition:all .15s ease}.account-bank-save:hover{transform:translateY(-1px);border-color:rgba(0,240,255,.45);box-shadow:0 6px 18px rgba(0,240,255,.08)}
+    .account-bank-cancel{display:inline-flex;align-items:center;justify-content:center;padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.04);color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer}
+    @media(max-width:520px){.account-bank-cards{grid-template-columns:1fr}.account-bank-empty{align-items:flex-start;flex-direction:column}}
+  </style>
+
   <!-- MODAL DETALLE DE LA CUENTA -->
   <div id="account-details-modal" class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden opacity-0 transition-all duration-300">
     <div class="bg-gray-950/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 w-full max-w-md overflow-hidden transform scale-95 transition-all duration-300" id="account-details-content">
@@ -4214,6 +4239,52 @@
       
       <!-- Body -->
       <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+        <!-- Datos bancarios: se guardan junto con cada cuenta en Firestore -->
+        <section class="account-bank-section" aria-label="Datos bancarios de la cuenta">
+          <div class="account-bank-heading">
+            <div class="account-bank-heading-main">
+              <span class="account-bank-icon"><i data-lucide="landmark" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="text-xs font-extrabold text-white tracking-wide">Datos bancarios</h4>
+                <p class="text-[9px] text-gray-500 mt-0.5">Consulta y copia rápida</p>
+              </div>
+            </div>
+            <button type="button" id="btn-account-bank-edit" class="account-bank-edit-btn" onclick="window.toggleAccountBankEdit()">
+              <i data-lucide="pencil" class="w-3 h-3"></i><span id="btn-account-bank-edit-label">Agregar</span>
+            </button>
+          </div>
+
+          <div id="account-bank-display">
+            <div id="account-bank-empty" class="account-bank-empty hidden">
+              <span><i data-lucide="credit-card" class="w-3.5 h-3.5 inline-block mr-1.5 align-[-2px]"></i>No hay datos bancarios registrados.</span>
+              <span class="text-cyan-300 font-bold">Agrégalos aquí</span>
+            </div>
+            <div id="account-bank-cards" class="account-bank-cards">
+              <div class="account-bank-card">
+                <div class="min-w-0"><span class="account-bank-label">Número de cuenta</span><span id="detail-acc-account-number" class="account-bank-value">—</span></div>
+                <button type="button" class="account-bank-copy" onclick="window.copyAccountBankField('numeroCuenta', this)" aria-label="Copiar número de cuenta" title="Copiar número de cuenta"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+              </div>
+              <div class="account-bank-card">
+                <div class="min-w-0"><span class="account-bank-label">Cuenta CLABE</span><span id="detail-acc-clabe" class="account-bank-value">—</span></div>
+                <button type="button" class="account-bank-copy" onclick="window.copyAccountBankField('clabe', this)" aria-label="Copiar CLABE" title="Copiar CLABE"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <div id="account-bank-edit-panel" class="account-bank-edit-panel mt-2">
+            <div class="account-bank-field">
+              <label for="account-details-account-number" class="account-bank-label">Número de cuenta</label>
+              <input id="account-details-account-number" class="account-bank-input" type="text" inputmode="numeric" autocomplete="off" maxlength="24" placeholder="Escribe el número de cuenta">
+            </div>
+            <div class="account-bank-field">
+              <label for="account-details-clabe" class="account-bank-label">Cuenta CLABE</label>
+              <input id="account-details-clabe" class="account-bank-input" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="18 dígitos">
+            </div>
+            <button type="button" id="btn-save-account-bank" class="account-bank-save" onclick="window.saveAccountBankDetails()"><i data-lucide="save" class="w-3.5 h-3.5"></i>Guardar datos bancarios</button>
+            <button type="button" class="account-bank-cancel" onclick="window.toggleAccountBankEdit(false)">Cancelar</button>
+          </div>
+        </section>
+
         <!-- Tarjetas de Información -->
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-gray-900 p-3 rounded-2xl border border-gray-800">
@@ -7423,9 +7494,89 @@
       }
     }
 
+    let currentDetailAccountId = null;
+
+    function renderAccountBankDetails(acc) {
+      const accountNumber = String(acc?.numeroCuenta || '').trim();
+      const clabe = String(acc?.clabe || '').trim();
+      const numberEl = document.getElementById('detail-acc-account-number');
+      const clabeEl = document.getElementById('detail-acc-clabe');
+      const cardsEl = document.getElementById('account-bank-cards');
+      const emptyEl = document.getElementById('account-bank-empty');
+      const inputNumber = document.getElementById('account-details-account-number');
+      const inputClabe = document.getElementById('account-details-clabe');
+      const label = document.getElementById('btn-account-bank-edit-label');
+      if (numberEl) numberEl.textContent = accountNumber || 'No registrado';
+      if (clabeEl) clabeEl.textContent = clabe || 'No registrado';
+      if (cardsEl) cardsEl.classList.toggle('hidden', !(accountNumber || clabe));
+      if (emptyEl) emptyEl.classList.toggle('hidden', !!(accountNumber || clabe));
+      if (inputNumber) inputNumber.value = accountNumber;
+      if (inputClabe) inputClabe.value = clabe;
+      if (label) label.textContent = (accountNumber || clabe) ? 'Editar' : 'Agregar';
+    }
+
+    function toggleAccountBankEdit(force) {
+      const panel = document.getElementById('account-bank-edit-panel');
+      if (!panel) return;
+      const open = typeof force === 'boolean' ? force : !panel.classList.contains('open');
+      panel.classList.toggle('open', open);
+      if (open) { const input = document.getElementById('account-details-account-number'); if (input) setTimeout(() => input.focus(), 30); }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function normalizeBankDigits(value) { return String(value || '').replace(/\D/g, ''); }
+
+    async function saveAccountBankDetails() {
+      if (!currentDetailAccountId) return;
+      const numberInput = document.getElementById('account-details-account-number');
+      const clabeInput = document.getElementById('account-details-clabe');
+      const saveBtn = document.getElementById('btn-save-account-bank');
+      const accountNumber = normalizeBankDigits(numberInput?.value);
+      const clabe = normalizeBankDigits(clabeInput?.value);
+      if (clabe && clabe.length !== 18) { window.alert('La CLABE debe tener exactamente 18 dígitos.'); clabeInput?.focus(); return; }
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.classList.add('opacity-60','cursor-not-allowed'); }
+      try {
+        await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'accounts', currentDetailAccountId), { numeroCuenta: accountNumber, clabe: clabe });
+        const acc = accounts.find(a => a.id === currentDetailAccountId);
+        if (acc) { acc.numeroCuenta = accountNumber; acc.clabe = clabe; renderAccountBankDetails(acc); }
+        toggleAccountBankEdit(false);
+      } catch (error) {
+        console.error('Error al guardar datos bancarios:', error);
+        window.alert('No se pudieron guardar los datos bancarios. Intenta nuevamente.');
+      } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.remove('opacity-60','cursor-not-allowed'); }
+      }
+    }
+
+    async function copyAccountBankField(field, buttonEl) {
+      const acc = accounts.find(a => a.id === currentDetailAccountId);
+      if (!acc) return;
+      const value = String(acc[field] || '').trim();
+      if (!value) { toggleAccountBankEdit(true); return; }
+      let copied = false;
+      try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(value); copied = true; } } catch (_) {}
+      if (!copied) {
+        try { const temp = document.createElement('textarea'); temp.value = value; temp.setAttribute('readonly',''); temp.style.position='fixed'; temp.style.opacity='0'; document.body.appendChild(temp); temp.select(); copied = document.execCommand('copy'); temp.remove(); } catch (_) {}
+      }
+      if (buttonEl) {
+        buttonEl.classList.add('copied');
+        const icon = buttonEl.querySelector('i');
+        if (icon) icon.setAttribute('data-lucide', copied ? 'check' : 'copy');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        setTimeout(() => { buttonEl.classList.remove('copied'); const iconAgain = buttonEl.querySelector('i'); if (iconAgain) iconAgain.setAttribute('data-lucide','copy'); if (typeof lucide !== 'undefined') lucide.createIcons(); }, 1100);
+      }
+    }
+
+    window.toggleAccountBankEdit = toggleAccountBankEdit;
+    window.saveAccountBankDetails = saveAccountBankDetails;
+    window.copyAccountBankField = copyAccountBankField;
+
     function openAccountDetails(accountId) {
       const acc = accounts.find(a => a.id === accountId);
       if (!acc) return;
+      currentDetailAccountId = accountId;
+      renderAccountBankDetails(acc);
+      toggleAccountBankEdit(false);
 
       let initialBalance = parseFloat(acc.initialBalance || 0);
       let incomeTotal = 0;
@@ -8191,7 +8342,9 @@
                 cutoffDay: cutoffDay,
                 paymentDueDay: paymentDueDay,
                 paymentDueColor: paymentDueColor,
-                cardColor: cardColor
+                cardColor: cardColor,
+                numeroCuenta: accounts.find(a => a.id === editingAccountId)?.numeroCuenta || '',
+                clabe: accounts.find(a => a.id === editingAccountId)?.clabe || ''
               });
             } else {
               await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'accounts', editingAccountId), {
@@ -8203,7 +8356,9 @@
                 cutoffDay: cutoffDay,
                 paymentDueDay: paymentDueDay,
                 paymentDueColor: paymentDueColor,
-                cardColor: cardColor
+                cardColor: cardColor,
+                numeroCuenta: accounts.find(a => a.id === editingAccountId)?.numeroCuenta || '',
+                clabe: accounts.find(a => a.id === editingAccountId)?.clabe || ''
               });
             }
             
@@ -8226,6 +8381,8 @@
               paymentDueDay: paymentDueDay,
               paymentDueColor: paymentDueColor,
               cardColor: cardColor,
+              numeroCuenta: '',
+              clabe: '',
               timestamp: new Date().toISOString()
             });
 
