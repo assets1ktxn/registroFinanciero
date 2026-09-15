@@ -1906,31 +1906,36 @@
     .mascot-wolf.mascot-facing-left .kia-weather-intro { transform:translateX(-50%) translateY(8px) scale(.92) scaleX(-1); }
     .mascot-wolf.mascot-facing-left .kia-weather-intro.kia-weather-intro-visible { transform:translateX(-50%) translateY(0) scale(1) scaleX(-1); }
 
-    /* Burbuja superior de clima: se usa cuando la voz de Kia está apagada, para que
-       el resumen siga visible como un pequeño comentario flotante sin depender de la mascota. */
+    /* Burbuja superior de clima: medallón circular pequeño, siempre visible y
+       totalmente independiente del estado de Kia/voz. */
     .kia-weather-top-bubble {
-      position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-10px) scale(.96);
-      width: min(360px, calc(100vw - 28px)); padding: 10px 13px 11px;
-      border-radius: 18px; background: linear-gradient(135deg, rgba(6,12,27,.97), rgba(16,10,34,.97));
-      border: 1px solid rgba(0,240,255,.30); box-shadow: 0 12px 28px rgba(0,0,0,.40), 0 0 20px rgba(0,240,255,.12);
+      position: fixed; top: 10px; left: 50%;
+      width: 112px; height: 112px;
+      transform: translateX(-50%) translateY(-8px) scale(.94);
+      padding: 10px; border-radius: 50%;
+      background: radial-gradient(circle at 32% 24%, rgba(0,240,255,.11), transparent 42%), linear-gradient(145deg, rgba(7,12,26,.98), rgba(14,10,32,.98));
+      border: 1px solid rgba(0,240,255,.28);
+      box-shadow: 0 10px 25px rgba(0,0,0,.42), 0 0 18px rgba(0,240,255,.11), inset 0 0 14px rgba(112,0,255,.08);
       color: #f3f4f6; opacity: 0; pointer-events:none; z-index: 9998;
       transition: opacity .28s ease, transform .28s cubic-bezier(.16,1,.3,1);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden;
     }
     .kia-weather-top-bubble.kia-weather-top-visible { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-    .kia-weather-top-accent { position:absolute; top:0; left:22px; right:22px; height:2px; border-radius:999px; background:linear-gradient(90deg, rgba(0,240,255,0), rgba(0,240,255,.85), rgba(112,0,255,.7), rgba(0,240,255,0)); }
-    .kia-weather-top-main { display:flex; align-items:center; gap:9px; }
-    .kia-weather-top-icon { width:31px; height:31px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.16); font-size:18px; }
-    .kia-weather-top-copy { min-width:0; }
-    .kia-weather-top-title { font-size:10px; font-weight:850; text-transform:uppercase; letter-spacing:.08em; color:#67e8f9; line-height:1.1; }
-    .kia-weather-top-location { margin-top:2px; font-size:9px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:270px; }
-    .kia-weather-top-summary { margin-top:8px; display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:7px; }
-    .kia-weather-top-rain { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11px; font-weight:800; color:#e5e7eb; }
-    .kia-weather-top-temp { display:inline-flex; align-items:center; padding:4px 7px; border-radius:999px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); font-size:10px; font-weight:750; color:#e5e7eb; white-space:nowrap; }
+    .kia-weather-top-accent { position:absolute; inset:5px; border-radius:50%; border:1px solid rgba(0,240,255,.09); }
+    .kia-weather-top-main { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; position:relative; z-index:1; }
+    .kia-weather-top-icon { width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.15); font-size:16px; }
+    .kia-weather-top-copy { min-width:0; max-width:86px; text-align:center; }
+    .kia-weather-top-title { font-size:8px; font-weight:850; text-transform:uppercase; letter-spacing:.08em; color:#67e8f9; line-height:1.1; }
+    .kia-weather-top-location { margin-top:2px; font-size:7px; line-height:1.15; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:86px; }
+    .kia-weather-top-summary { margin-top:5px; display:flex; align-items:center; justify-content:center; gap:3px; position:relative; z-index:1; }
+    .kia-weather-top-rain { font-size:7.5px; font-weight:850; color:#e5e7eb; white-space:nowrap; }
+    .kia-weather-top-temp { display:inline-flex; align-items:center; justify-content:center; min-width:24px; padding:3px 4px; border-radius:999px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); font-size:7.5px; font-weight:800; color:#e5e7eb; white-space:nowrap; }
+    .kia-weather-top-bubble::after { content:''; position:absolute; left:50%; bottom:7px; width:30px; height:6px; transform:translateX(-50%); border-radius:50%; background:radial-gradient(ellipse, rgba(0,240,255,.18), transparent 70%); }
     @media (max-width: 480px) {
-      .kia-weather-top-bubble { top: 10px; width: calc(100vw - 20px); padding: 9px 11px 10px; }
-      .kia-weather-top-summary { gap: 5px; }
-      .kia-weather-top-location { max-width: 210px; }
+      .kia-weather-top-bubble { top: 8px; width: 100px; height: 100px; }
+      .kia-weather-top-copy, .kia-weather-top-location { max-width: 76px; }
+      .kia-weather-top-summary { gap: 2px; }
     }
 
     .mascot-speech-bubble {
@@ -12904,22 +12909,9 @@
       const t = stripAccentsKia(text).toLowerCase().replace(/[¿?¡!]/g, '');
       const has = (arr) => arr.some(k => t.includes(k));
 
-      // ---- Clima: consultas directas como "¿qué clima hace?", "¿va a llover?"
-      // o "dime la temperatura" se atienden antes de las consultas financieras.
-      const isWeatherQuery = has([
-        'clima', 'tiempo que hace', 'tiempo va a hacer', 'temperatura',
-        'va a llover', 'llovera', 'llueve', 'probabilidad de lluvia',
-        'pronostico', 'meteorologico', 'meteorologia', 'lluvia'
-      ]);
+      const isWeatherQuery = has(['clima','tiempo','meteorologia','meteorología','va a llover','llovera','lloverá','probabilidad de lluvia','temperatura','temperaturas','pronostico','pronóstico','que clima hace','qué clima hace','que tiempo hace','qué tiempo hace']);
       if (isWeatherQuery) {
-        return {
-          type: 'weather_query',
-          emoji: '🌤️',
-          title: 'Clima de hoy',
-          queryCategory: 'clima',
-          detail: 'Consultando el clima de ' + kiaWeatherConfig.label + '…',
-          speak: ''
-        };
+        return { type: 'weather', emoji: '🌤️', title: 'Clima de hoy', detail: 'Consultando el clima…' };
       }
 
       // ---- Navegar el calendario: "llévame a marzo", "ve al mes de agosto",
@@ -17185,34 +17177,32 @@
       var warningEl = document.getElementById('kia-mic-warning-banner');
       var isBoveda = result.type === 'boveda';
       var isCalendarNav = result.type === 'calendar_nav';
-      var isWeatherQuery = result.type === 'weather_query';
       var isQuery = result.type === 'query';
+      var isWeather = result.type === 'weather';
       var isError = result.type === 'error';
       if (micOverlayEl) micOverlayEl.classList.toggle('kia-mic-query-mode', isQuery);
       if (micOverlayEl) micOverlayEl.classList.toggle('kia-mic-error-mode', isError);
       if (warningEl) warningEl.style.display = 'none';
 
-      if (isWeatherQuery) {
+      if (isWeather) {
         if (formEl) formEl.style.display = 'none';
         if (simpleEl) simpleEl.style.display = 'flex';
         if (micResultIconEl) micResultIconEl.textContent = '🌤️';
         if (micResultTitleEl) micResultTitleEl.textContent = 'Clima de hoy';
-        if (micResultDetailEl) micResultDetailEl.textContent = 'Consultando el clima de ' + kiaWeatherConfig.label + '…';
-        fetchKiaWeatherData().then(function(weather) {
-          var rain = weather.info.rainy || weather.probability >= 50;
-          var detail = (rain ? '🌧️ Lluvia · ' : '☀️ Sin lluvia esperada · ') + weather.probability + '% · ↓ ' + Math.round(weather.min) + '° · ↑ ' + Math.round(weather.max) + '°';
-          if (micResultDetailEl) micResultDetailEl.textContent = detail;
-          renderKiaWeatherFields(weather.info, weather.probability, weather.min, weather.max, true);
-          if (weatherTopBubbleEl) {
-            weatherTopBubbleEl.classList.add('kia-weather-top-visible');
-            weatherTopBubbleEl.setAttribute('aria-hidden','false');
-          }
-          speakMascotText(kiaWeatherVoiceText(weather));
-        }).catch(function(err) {
-          console.warn('No se pudo consultar el clima solicitado por Kia:', err);
-          var msg = 'No pude consultar el clima en este momento.';
-          if (micResultDetailEl) micResultDetailEl.textContent = msg;
-          speakMascotText(msg);
+        if (micResultDetailEl) micResultDetailEl.textContent = 'Consultando ' + (kiaWeatherConfig.label || 'tu ubicación') + '…';
+        var weatherVoiceUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(kiaWeatherConfig.latitude) + '&longitude=' + encodeURIComponent(kiaWeatherConfig.longitude) + '&daily=weather_code,temperature_2m_min,temperature_2m_max,precipitation_probability_max&timezone=' + encodeURIComponent(kiaWeatherConfig.timezone || 'auto') + '&forecast_days=1';
+        fetch(weatherVoiceUrl, { cache:'no-store' }).then(function(r){ if(!r.ok) throw new Error('clima'); return r.json(); }).then(function(data){
+          var d=data && data.daily, p=d && d.precipitation_probability_max && d.precipitation_probability_max[0], mn=d && d.temperature_2m_min && d.temperature_2m_min[0], mx=d && d.temperature_2m_max && d.temperature_2m_max[0], code=d && d.weather_code && d.weather_code[0];
+          if(p==null || mn==null || mx==null) throw new Error('pronostico');
+          var info=kiaWeatherCodeInfo(code), pct=Math.round(Number(p));
+          var rain=info.rainy || pct>=50 ? 'Hay ' + pct + '% de probabilidad de lluvia' : 'La probabilidad de lluvia es de ' + pct + '%';
+          var speech=rain+'. Temperatura mínima de '+Math.round(Number(mn))+' grados y máxima de '+Math.round(Number(mx))+' grados en '+(kiaWeatherConfig.label || 'tu ubicación')+'.';
+          if(micResultIconEl) micResultIconEl.textContent=info.icon;
+          if(micResultDetailEl) micResultDetailEl.textContent=(kiaWeatherConfig.label || 'Tu ubicación')+' · '+Math.round(Number(mn))+'° / '+Math.round(Number(mx))+'° · lluvia '+pct+'%';
+          speakMascotText(speech);
+        }).catch(function(){
+          if(micResultDetailEl) micResultDetailEl.textContent='No pude obtener el pronóstico en este momento.';
+          speakMascotText('No pude obtener el pronóstico del clima en este momento.');
         });
       } else if (isError) {
         // No se entendió bien lo que se dijo: se avisa con voz y visualmente,
@@ -17874,10 +17864,6 @@
         wolfEl.style.display = 'none';
         bubbleEl.classList.remove('mascot-bubble-visible');
         closeNoteBox();
-        if (weatherTopBubbleEl) {
-          weatherTopBubbleEl.classList.add('kia-weather-top-visible');
-          weatherTopBubbleEl.setAttribute('aria-hidden','false');
-        }
       }
     }
 
@@ -17985,28 +17971,6 @@
         if (weatherIntroMaxEl) weatherIntroMaxEl.textContent = '↑ ' + Math.round(Number(tmax)) + '°';
       }
     }
-    async function fetchKiaWeatherData() {
-      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(kiaWeatherConfig.latitude) + '&longitude=' + encodeURIComponent(kiaWeatherConfig.longitude) +
-        '&daily=weather_code,temperature_2m_min,temperature_2m_max,precipitation_probability_max' +
-        '&timezone=' + encodeURIComponent(kiaWeatherConfig.timezone || 'auto') + '&forecast_days=1';
-      var response = await fetch(url, { cache:'no-store' });
-      if (!response.ok) throw new Error('No se pudo consultar el clima');
-      var data = await response.json();
-      var d = data && data.daily;
-      var pct = d && d.precipitation_probability_max && d.precipitation_probability_max[0];
-      var tmin = d && d.temperature_2m_min && d.temperature_2m_min[0];
-      var tmax = d && d.temperature_2m_max && d.temperature_2m_max[0];
-      var code = d && d.weather_code && d.weather_code[0];
-      if (pct == null || tmin == null || tmax == null) throw new Error('Pronóstico incompleto');
-      return { info: kiaWeatherCodeInfo(code), probability: Math.round(Number(pct)), min: Number(tmin), max: Number(tmax) };
-    }
-
-    function kiaWeatherVoiceText(weather) {
-      var rain = weather.info.rainy || weather.probability >= 50;
-      return 'En ' + kiaWeatherConfig.label + ', la temperatura mínima será de ' + Math.round(weather.min) + ' grados y la máxima de ' + Math.round(weather.max) + ' grados. ' +
-        (rain ? 'Hay una probabilidad de lluvia de ' : 'La probabilidad de lluvia es de ') + weather.probability + ' por ciento.';
-    }
-
     function showKiaWeatherIntro() {
       if (!weatherIntroEl) return;
       hideKiaWeatherIntro();
@@ -18029,22 +17993,26 @@
         })
         .catch(function(err){ console.warn('No se pudo cargar el clima de Kia:',err); hideKiaWeatherIntro(); });
     }
-    async function showKiaWeatherTopBubble(persistent) {
+    function showKiaWeatherTopBubble() {
       if (!weatherTopBubbleEl) return;
       hideKiaWeatherTopBubble();
       var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(kiaWeatherConfig.latitude) + '&longitude=' + encodeURIComponent(kiaWeatherConfig.longitude) +
         '&daily=weather_code,temperature_2m_min,temperature_2m_max,precipitation_probability_max' +
         '&timezone=' + encodeURIComponent(kiaWeatherConfig.timezone || 'auto') + '&forecast_days=1';
-      try {
-        var weather = await fetchKiaWeatherData();
-        renderKiaWeatherFields(weather.info, weather.probability, weather.min, weather.max, true);
-        weatherTopBubbleEl.classList.add('kia-weather-top-visible');
-        weatherTopBubbleEl.setAttribute('aria-hidden','false');
-        if (!persistent) weatherTopTimer=setTimeout(hideKiaWeatherTopBubble,5000);
-      } catch (err) {
-        console.warn('No se pudo cargar el clima superior de Kia:',err);
-        hideKiaWeatherTopBubble();
-      }
+      fetch(url, { cache:'no-store' })
+        .then(function(r){ if(!r.ok) throw new Error('No se pudo consultar el clima'); return r.json(); })
+        .then(function(data){
+          var d=data && data.daily;
+          var pct=d && d.precipitation_probability_max && d.precipitation_probability_max[0];
+          var tmin=d && d.temperature_2m_min && d.temperature_2m_min[0];
+          var tmax=d && d.temperature_2m_max && d.temperature_2m_max[0];
+          var code=d && d.weather_code && d.weather_code[0];
+          if(pct==null || tmin==null || tmax==null) throw new Error('Pronóstico incompleto');
+          renderKiaWeatherFields(kiaWeatherCodeInfo(code), Math.round(Number(pct)), tmin, tmax, true);
+          weatherTopBubbleEl.classList.add('kia-weather-top-visible');
+          weatherTopBubbleEl.setAttribute('aria-hidden','false');
+        })
+        .catch(function(err){ console.warn('No se pudo cargar el clima superior de Kia:',err); hideKiaWeatherTopBubble(); });
     }
 
     /* ---------- Inicialización ---------- */
@@ -18058,11 +18026,6 @@
       weatherIntroMinEl = document.getElementById('kia-weather-intro-min');
       weatherIntroMaxEl = document.getElementById('kia-weather-intro-max');
       weatherTopBubbleEl = document.getElementById('kia-weather-top-bubble');
-      // La burbuja del clima debe ser independiente de la visibilidad de Kia.
-      // Se mueve al <body> porque #mascot-wolf se oculta cuando el asistente está apagado.
-      if (weatherTopBubbleEl && weatherTopBubbleEl.parentElement === wolfEl) {
-        document.body.appendChild(weatherTopBubbleEl);
-      }
       weatherTopIconEl = document.getElementById('kia-weather-top-icon');
       weatherTopLocationEl = document.getElementById('kia-weather-top-location');
       weatherTopRainEl = document.getElementById('kia-weather-top-rain');
@@ -18179,18 +18142,17 @@
       scheduleIdleGesture();
       scheduleTailWag();
 
-      // La burbuja superior del clima permanece visible siempre, independientemente
-      // de que Kia o su voz estén activadas. Se refresca automáticamente cada 30 min.
-      hideKiaWeatherIntro();
-      showKiaWeatherTopBubble(true);
-      if (!window.__kiaWeatherRefreshTimer) {
-        window.__kiaWeatherRefreshTimer = setInterval(function () {
-          showKiaWeatherTopBubble(true);
-        }, 30 * 60 * 1000);
-      }
+      // El clima se muestra durante 5 segundos. Con la voz de Kia activa aparece junto
+      // a la mascota; con la voz apagada usa una burbuja flotante superior, independiente de Kia.
+      var weatherVoiceOn = isMascotVoiceEnabled();
+      // La burbuja circular superior permanece visible siempre; el resumen junto a Kia
+      // solo se usa como saludo cuando la voz está activada.
+      showKiaWeatherTopBubble();
+      if (weatherVoiceOn && isMascotEnabled()) showKiaWeatherIntro();
+      else hideKiaWeatherIntro();
       setTimeout(function () {
         if (isMascotEnabled() && isMascotVoiceEnabled()) sayRandomPhrase();
-      }, 1500);
+      }, weatherVoiceOn && isMascotEnabled() ? 6200 : 1500);
     }
 
     if (document.readyState === 'loading') {
