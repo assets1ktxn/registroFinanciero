@@ -5959,6 +5959,10 @@
             profileData.loginSubtitle || DEFAULT_LOGIN_SUBTITLE
           );
           setKiaWeatherConfig(profileData.weatherConfig || null);
+          if (typeof profileData.headerSticky === 'boolean') {
+            try { localStorage.setItem(HEADER_STICKY_KEY, profileData.headerSticky ? '1' : '0'); } catch (e) {}
+            applyHeaderStickyPreference();
+          }
         } else {
           updateUserProfileUI('Milton Montoya', '');
           updateAppTitlesUI(DEFAULT_LOGIN_TITLE, DEFAULT_MAIN_TITLE, DEFAULT_LOGIN_SUBTITLE);
@@ -8931,8 +8935,12 @@
       }
     }
     window.toggleHeaderSticky = function() {
-      try { localStorage.setItem(HEADER_STICKY_KEY, isHeaderStickyEnabled() ? '0' : '1'); } catch (e) {}
+      const enabled = !isHeaderStickyEnabled();
+      try { localStorage.setItem(HEADER_STICKY_KEY, enabled ? '1' : '0'); } catch (e) {}
       applyHeaderStickyPreference();
+      const profileDocRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'settings', 'profile');
+      setDoc(profileDocRef, { headerSticky: enabled }, { merge: true })
+        .catch((error) => console.error("Error al guardar el encabezado fijo en la nube:", error));
     };
     applyHeaderStickyPreference();
 
