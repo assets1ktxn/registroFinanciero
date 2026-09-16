@@ -1914,9 +1914,9 @@
     .mascot-wolf.mascot-facing-left .kia-weather-intro.kia-weather-intro-visible { transform:translateX(-50%) translateY(0) scale(1) scaleX(-1); }
 
     /* Botón de clima del encabezado: mismo tamaño y estilo que el botón de
-       día/noche (theme-toggle) — un botón cuadrado con solo el icono. El
-       detalle completo (ubicación, lluvia, mín/máx) queda como tooltip
-       (atributo title) y sigue disponible con la voz de Kia y su saludo. */
+       día/noche (theme-toggle) — un botón cuadrado con solo el icono. Al
+       acercar el mouse (o tocar en móvil) se despliega un panel flotante
+       con el detalle completo: ubicación, lluvia y temperaturas mín/máx. */
     .kia-weather-top-bubble {
       position: relative; top: auto; left: auto; transform: none;
       flex: 0 0 auto; width: 44px; height: 44px; min-width: 0;
@@ -1925,18 +1925,44 @@
       background: rgba(3, 7, 18, 0.78);
       border: 1px solid rgba(0,240,255,.22);
       box-shadow: 0 0 14px rgba(0,240,255,.08), inset 0 0 10px rgba(255,255,255,.02);
-      color: #f3f4f6; opacity: 0; pointer-events:none; z-index: 1; cursor: default;
+      color: #f3f4f6; opacity: 0; pointer-events:none; z-index: 1; cursor: pointer;
       transition: opacity .28s ease, transform .28s ease, border-color .2s ease;
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       box-sizing: border-box;
     }
-    .kia-weather-top-bubble.kia-weather-top-visible { opacity: 1; transform: none; }
-    .kia-weather-top-bubble:hover { border-color: rgba(0,240,255,.38); }
-    .kia-weather-top-accent { display: none; }
-    .kia-weather-top-main { display: contents; }
+    /* Antes el botón se quedaba con pointer-events:none incluso ya visible,
+       por lo que el :hover nunca llegaba a activarse. Al volverse visible,
+       habilitamos los eventos de puntero para que el hover / tap funcionen. */
+    .kia-weather-top-bubble.kia-weather-top-visible { opacity: 1; transform: none; pointer-events: auto; }
+    .kia-weather-top-bubble:hover,
+    .kia-weather-top-bubble:focus-visible { border-color: rgba(0,240,255,.38); }
+    .kia-weather-top-bubble:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(0,240,255,.45); }
     .kia-weather-top-icon { width: auto; height: auto; border-radius: 0; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; background: none; border: none; font-size: 20px; line-height: 1; }
-    .kia-weather-top-copy { display: none; }
-    .kia-weather-top-summary { display: none; }
+
+    /* Panel flotante con el detalle del clima (ubicación, lluvia, mín/máx) */
+    .kia-weather-top-tooltip {
+      position: absolute; top: calc(100% + 10px); right: 0; left: auto;
+      width: max-content; max-width: min(240px, 82vw);
+      background: linear-gradient(135deg, rgba(7,12,26,0.97), rgba(15,10,32,0.97));
+      border: 1px solid rgba(0, 240, 255, 0.32);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.15), 0 10px 28px rgba(0,0,0,0.48);
+      border-radius: 14px; padding: 10px 12px;
+      color: #f3f4f6; opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateY(6px) scale(0.95); transform-origin: top right;
+      transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+      z-index: 50; text-align: left; cursor: default;
+    }
+    .kia-weather-top-bubble:hover .kia-weather-top-tooltip,
+    .kia-weather-top-bubble:focus-within .kia-weather-top-tooltip,
+    .kia-weather-top-bubble.kia-weather-top-tooltip-open .kia-weather-top-tooltip {
+      opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1);
+    }
+    .kia-weather-top-title { font-size:10px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:#67e8f9; line-height:1.1; }
+    .kia-weather-top-location { font-size:11px; color:#d1d5db; margin-top:3px; line-height:1.25; font-weight:600; }
+    .kia-weather-top-summary { display:flex; flex-direction:column; gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.08); font-size:11.5px; font-weight:750; }
+    .kia-weather-top-rain { white-space: normal; }
+    .kia-weather-top-temps { display:flex; align-items:center; gap:6px; }
+    .kia-weather-top-temp { display:inline-flex; align-items:center; gap:3px; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); color:#e5e7eb; white-space:nowrap; font-size:10.5px; }
     @media (max-width: 700px) {
       #app-header { gap: 6px; padding: 10px; }
       #app-header > div:first-child { min-width: 0; flex: 1 1 auto; gap: 8px; }
@@ -1948,9 +1974,11 @@
       #app-header #theme-toggle i { width: 17px; height: 17px; }
       .kia-weather-top-bubble { width: 33px; height: 33px; border-radius: 10px; }
       .kia-weather-top-icon { font-size: 16px; }
+      .kia-weather-top-tooltip { right: -8px; }
       .header-kia-pill { padding: 4px 5px 4px 6px; gap: 5px; border-radius: 10px; }
       .header-kia-switch { width: 28px; height: 16px; }
       .header-kia-switch-dot { width: 12px; height: 12px; top: 2px; left: 2px; font-size: 8px; }
+      .header-kia-switch.is-on .header-kia-switch-dot { transform: translateX(12px); }
       .header-kia-mic-btn { width: 23px; height: 23px; }
       #profile-dropdown-btn { padding: 4px; }
       #user-avatar-img { width: 32px; height: 32px; }
@@ -1963,7 +1991,10 @@
       #app-header > div:first-child > div:first-child { width: 32px; min-width: 32px; padding: 6px; }
       #app-header > div:first-child h1 { font-size: .88rem; }
       #app-header > div:first-child p { display: none; }
-      .header-kia-pill { display: none; }
+      /* Antes el interruptor de Kia se ocultaba por completo aquí; ahora se
+         mantiene visible y accesible en el encabezado a cualquier ancho,
+         solo un poco más compacto para que quepa junto a los demás botones. */
+      .kia-weather-top-tooltip { max-width: 78vw; right: -20px; }
     }
 
     body.header-not-sticky #app-header { position: relative !important; top: auto !important; }
@@ -3350,19 +3381,18 @@
           <i data-lucide="sun" id="theme-icon" class="w-5 h-5"></i>
         </button>
 
-          <div id="kia-weather-top-bubble" class="kia-weather-top-bubble" aria-hidden="true">
-            <div class="kia-weather-top-accent"></div>
-            <div class="kia-weather-top-main">
-              <span id="kia-weather-top-icon" class="kia-weather-top-icon">🌤️</span>
-              <div class="kia-weather-top-copy">
-                <div class="kia-weather-top-title">Clima de hoy</div>
-                <div id="kia-weather-top-location" class="kia-weather-top-location">San Buenaventura · Ixtapaluca</div>
+          <div id="kia-weather-top-bubble" class="kia-weather-top-bubble" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false" aria-label="Ver detalle del clima de hoy" aria-hidden="true">
+            <span id="kia-weather-top-icon" class="kia-weather-top-icon">🌤️</span>
+            <div id="kia-weather-top-tooltip" class="kia-weather-top-tooltip" role="tooltip">
+              <div class="kia-weather-top-title">Clima de hoy</div>
+              <div id="kia-weather-top-location" class="kia-weather-top-location">San Buenaventura · Ixtapaluca</div>
+              <div class="kia-weather-top-summary">
+                <span id="kia-weather-top-rain" class="kia-weather-top-rain">Consultando…</span>
+                <div class="kia-weather-top-temps">
+                  <span id="kia-weather-top-min" class="kia-weather-top-temp">↓ --°</span>
+                  <span id="kia-weather-top-max" class="kia-weather-top-temp">↑ --°</span>
+                </div>
               </div>
-            </div>
-            <div class="kia-weather-top-summary">
-              <span id="kia-weather-top-rain" class="kia-weather-top-rain">Consultando…</span>
-              <span id="kia-weather-top-min" class="kia-weather-top-temp">↓ --°</span>
-              <span id="kia-weather-top-max" class="kia-weather-top-temp">↑ --°</span>
             </div>
           </div>
 
@@ -18163,6 +18193,32 @@
       weatherTopRainEl = document.getElementById('kia-weather-top-rain');
       weatherTopMinEl = document.getElementById('kia-weather-top-min');
       weatherTopMaxEl = document.getElementById('kia-weather-top-max');
+      // En escritorio el panel flotante del clima se abre solo con el mouse
+      // (vía CSS :hover). En pantallas táctiles no existe hover, así que
+      // aquí lo abrimos/cerramos también con toque/clic y teclado.
+      if (weatherTopBubbleEl) {
+        weatherTopBubbleEl.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var isOpen = weatherTopBubbleEl.classList.toggle('kia-weather-top-tooltip-open');
+          weatherTopBubbleEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+        weatherTopBubbleEl.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            weatherTopBubbleEl.click();
+          } else if (e.key === 'Escape') {
+            weatherTopBubbleEl.classList.remove('kia-weather-top-tooltip-open');
+            weatherTopBubbleEl.setAttribute('aria-expanded', 'false');
+            weatherTopBubbleEl.blur();
+          }
+        });
+        document.addEventListener('click', function (e) {
+          if (!weatherTopBubbleEl.contains(e.target)) {
+            weatherTopBubbleEl.classList.remove('kia-weather-top-tooltip-open');
+            weatherTopBubbleEl.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
       noteBoxEl = document.getElementById('mascot-note-box');
       noteTextarea = document.getElementById('mascot-note-textarea');
       micOverlayEl = document.getElementById('kia-mic-overlay');
