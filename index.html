@@ -4607,7 +4607,7 @@
         </button>
       </div>
 
-      <form id="profile-settings-form" class="p-6 space-y-5">
+      <form id="profile-settings-form" class="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
         <!-- Modificar Imagen de Perfil -->
         <div class="text-center space-y-3 mb-4">
           <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Foto de Perfil</label>
@@ -16473,6 +16473,10 @@
     var weatherIntroTimer = null, weatherTopTimer = null;
     var KIA_WEATHER_DEFAULT = { label: 'San Buenaventura, Ixtapaluca, Estado de México', latitude: 19.3031, longitude: -98.8631, timezone: 'America/Mexico_City' };
     var kiaWeatherConfig = { ...KIA_WEATHER_DEFAULT };
+    // Se expone en window porque "Ajustes de Perfil" (definido en el <script type="module">
+    // de más arriba) necesita leer y actualizar este valor, y un módulo no puede ver las
+    // variables locales de este otro <script>.
+    window.kiaWeatherConfig = kiaWeatherConfig;
     var posX = 24, posY = 0;
     var facing = 'right';
     var bubbleTimer = null;
@@ -18070,6 +18074,7 @@
       kiaWeatherConfig = (Number.isFinite(lat) && Number.isFinite(lon))
         ? { label: c.label || KIA_WEATHER_DEFAULT.label, latitude: lat, longitude: lon, timezone: c.timezone || KIA_WEATHER_DEFAULT.timezone }
         : { ...KIA_WEATHER_DEFAULT };
+      window.kiaWeatherConfig = kiaWeatherConfig;
       var profileInput = document.getElementById('settings-weather-location');
       if (profileInput && document.activeElement !== profileInput) profileInput.value = kiaWeatherConfig.label;
       var hint = document.getElementById('settings-weather-location-hint');
@@ -18096,6 +18101,10 @@
         return null;
       }
     }
+    // Mismo motivo que window.kiaWeatherConfig: "Ajustes de Perfil" (en el
+    // <script type="module">) necesita llamar a estas dos funciones.
+    window.setKiaWeatherConfig = setKiaWeatherConfig;
+    window.geocodeKiaWeatherLocation = geocodeKiaWeatherLocation;
 
     function kiaWeatherCodeInfo(code) {
       var c = Number(code);
