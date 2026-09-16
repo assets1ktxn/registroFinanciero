@@ -44,6 +44,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Sans:wght@500;600&family=Inter:wght@500;600&family=Kalam:wght@400;500&family=Lora:wght@400;500&family=Manrope:wght@500;600&family=Nunito:wght@500;600&family=Patrick+Hand&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
 
   <style>
+    /* El overflow-x:hidden va en <html> y NO en <body>: si se pone en body, los
+       navegadores rompen el position:sticky de cualquier elemento dentro de él
+       (por eso el botón "Encabezado siempre arriba" no hacía nada, aunque
+       cambiara de ACTIVADO a DESACTIVADO visualmente). Puesto en html se sigue
+       evitando el scroll horizontal, pero el header sí puede quedar pegado. */
+    html {
+      overflow-x: hidden;
+    }
     body {
       background-color: #050409;
       color: #f3f4f6;
@@ -54,7 +62,6 @@
         radial-gradient(at 50% 100%, rgba(250, 255, 0, 0.04) 0px, transparent 50%);
       background-attachment: fixed;
       transition: background-color 0.3s ease, color 0.3s ease;
-      overflow-x: hidden;
     }
 
     /* Animaciones Generales Fluidas (NUEVO) */
@@ -1906,35 +1913,60 @@
     .mascot-wolf.mascot-facing-left .kia-weather-intro { transform:translateX(-50%) translateY(8px) scale(.92) scaleX(-1); }
     .mascot-wolf.mascot-facing-left .kia-weather-intro.kia-weather-intro-visible { transform:translateX(-50%) translateY(0) scale(1) scaleX(-1); }
 
-    /* Burbuja superior de clima: se usa cuando la voz de Kia está apagada, para que
-       el resumen siga visible como un pequeño comentario flotante sin depender de la mascota. */
+    /* Botón de clima del encabezado: mismo tamaño y estilo que el botón de
+       día/noche (theme-toggle) — un botón cuadrado con solo el icono. El
+       detalle completo (ubicación, lluvia, mín/máx) queda como tooltip
+       (atributo title) y sigue disponible con la voz de Kia y su saludo. */
     .kia-weather-top-bubble {
-      position: relative; top: auto; left: auto; transform: none; flex: 0 1 250px; width: 250px; min-width: 0;
-      padding: 7px 9px 8px; border-radius: 14px;
+      position: relative; top: auto; left: auto; transform: none;
+      flex: 0 0 auto; width: 44px; height: 44px; min-width: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0; border-radius: 12px;
       background: rgba(3, 7, 18, 0.78);
       border: 1px solid rgba(0,240,255,.22);
       box-shadow: 0 0 14px rgba(0,240,255,.08), inset 0 0 10px rgba(255,255,255,.02);
-      color: #f3f4f6; opacity: 0; pointer-events:none; z-index: 1;
+      color: #f3f4f6; opacity: 0; pointer-events:none; z-index: 1; cursor: default;
       transition: opacity .28s ease, transform .28s ease, border-color .2s ease;
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       box-sizing: border-box;
     }
     .kia-weather-top-bubble.kia-weather-top-visible { opacity: 1; transform: none; }
     .kia-weather-top-bubble:hover { border-color: rgba(0,240,255,.38); }
-    .kia-weather-top-accent { position:absolute; top:0; left:18px; right:18px; height:2px; border-radius:999px; background:linear-gradient(90deg, rgba(0,240,255,0), rgba(0,240,255,.75), rgba(112,0,255,.65), rgba(0,240,255,0)); }
-    .kia-weather-top-main { display:flex; align-items:center; gap:7px; }
-    .kia-weather-top-icon { width:27px; height:27px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.16); font-size:15px; }
-    .kia-weather-top-copy { min-width:0; }
-    .kia-weather-top-title { font-size:9px; font-weight:850; text-transform:uppercase; letter-spacing:.08em; color:#67e8f9; line-height:1.1; }
-    .kia-weather-top-location { margin-top:2px; font-size:8px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:185px; }
-    .kia-weather-top-summary { margin-top:6px; display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:5px; }
-    .kia-weather-top-rain { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px; font-weight:800; color:#e5e7eb; }
-    .kia-weather-top-temp { display:inline-flex; align-items:center; padding:3px 5px; border-radius:999px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); font-size:9px; font-weight:750; color:#e5e7eb; white-space:nowrap; }
+    .kia-weather-top-accent { display: none; }
+    .kia-weather-top-main { display: contents; }
+    .kia-weather-top-icon { width: auto; height: auto; border-radius: 0; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; background: none; border: none; font-size: 20px; line-height: 1; }
+    .kia-weather-top-copy { display: none; }
+    .kia-weather-top-summary { display: none; }
     @media (max-width: 700px) {
-      .kia-weather-top-bubble { flex: 1 1 100%; width: 100%; max-width: none; order: 3; }
-      .kia-weather-top-summary { gap: 5px; }
-      .kia-weather-top-location { max-width: none; }
+      #app-header { gap: 6px; padding: 10px; }
+      #app-header > div:first-child { min-width: 0; flex: 1 1 auto; gap: 8px; }
+      #app-header > div:first-child > div:first-child { width: 38px; min-width: 38px; padding: 8px; }
+      #app-header > div:first-child h1 { font-size: 1rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+      #app-header > div:first-child p { font-size: 8px; }
+      #app-header > div:nth-child(2) { flex: 0 1 auto; min-width: 0; gap: 5px; }
+      #app-header #theme-toggle { padding: 8px; }
+      #app-header #theme-toggle i { width: 17px; height: 17px; }
+      .kia-weather-top-bubble { width: 33px; height: 33px; border-radius: 10px; }
+      .kia-weather-top-icon { font-size: 16px; }
+      .header-kia-pill { padding: 4px 5px 4px 6px; gap: 5px; border-radius: 10px; }
+      .header-kia-switch { width: 28px; height: 16px; }
+      .header-kia-switch-dot { width: 12px; height: 12px; top: 2px; left: 2px; font-size: 8px; }
+      .header-kia-mic-btn { width: 23px; height: 23px; }
+      #profile-dropdown-btn { padding: 4px; }
+      #user-avatar-img { width: 32px; height: 32px; }
+      #profile-dropdown-btn i { width: 14px; height: 14px; margin-right: 1px; }
     }
+
+    @media (max-width: 430px) {
+      #app-header { padding: 8px; gap: 5px; flex-wrap: wrap; }
+      #app-header > div:first-child { flex: 1 1 auto; min-width: 0; }
+      #app-header > div:first-child > div:first-child { width: 32px; min-width: 32px; padding: 6px; }
+      #app-header > div:first-child h1 { font-size: .88rem; }
+      #app-header > div:first-child p { display: none; }
+      .header-kia-pill { display: none; }
+    }
+
+    body.header-not-sticky #app-header { position: relative !important; top: auto !important; }
 
     .mascot-speech-bubble {
       position: absolute;
@@ -3296,7 +3328,7 @@
   <div id="app-container" class="max-w-6xl mx-auto space-y-8 hidden animate-fade-in">
     
     <!-- HEADER -->
-    <header class="sticky top-2 relative z-40 flex flex-wrap items-center justify-between gap-4 mb-8 glass-card p-4 md:p-6 rounded-2xl border border-[#7000ff]/15">
+    <header id="app-header" class="sticky top-2 z-40 flex flex-wrap items-center justify-between gap-4 mb-8 glass-card p-4 md:p-6 rounded-2xl border border-[#7000ff]/15">
       <div class="flex items-center gap-4">
         <div class="p-3 bg-[#7000ff]/15 text-[#00f0ff] rounded-xl border border-[#00f0ff]/20 shadow-md shadow-[#00f0ff]/5">
           <svg viewBox="0 0 100 100" class="w-7 h-7 filter drop-shadow-[0_0_6px_rgba(0,240,255,0.6)]" aria-hidden="true">
@@ -4572,6 +4604,25 @@
             <input type="text" id="settings-weather-location" autocomplete="off" placeholder="San Buenaventura, Ixtapaluca, Estado de México" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 focus:border-[#00f0ff] outline-none text-white text-xs placeholder:text-gray-600" />
             <p id="settings-weather-location-hint" class="text-[9px] text-gray-500 leading-relaxed">Ejemplo: San Buenaventura, Ixtapaluca, Estado de México.</p>
           </div>
+        </div>
+
+        <div id="header-sticky-setting" class="bg-gray-900 border border-cyan-400/35 rounded-2xl p-4 space-y-3 shadow-[0_0_18px_rgba(0,240,255,0.08)]">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 shrink-0 rounded-xl bg-cyan-400/10 border border-cyan-400/25 flex items-center justify-center text-xl">📌</div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-extrabold text-white">Encabezado siempre arriba</p>
+              <p class="text-[11px] text-gray-400 mt-0.5 leading-relaxed">Activa esto para mantener el encabezado pegado arriba mientras bajas por la pantalla.</p>
+            </div>
+          </div>
+          <button type="button" id="header-sticky-toggle" onclick="window.toggleHeaderSticky()" class="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-950/80 px-3 py-3 text-left transition-colors hover:border-cyan-400/40" aria-label="Activar o desactivar encabezado fijo" aria-pressed="true">
+            <span class="flex items-center gap-2 min-w-0">
+              <span class="text-xs font-bold text-gray-300">Mantener fijo</span>
+              <span id="header-sticky-toggle-status" class="text-[10px] font-extrabold uppercase tracking-wider text-[#c084fc]">ACTIVADO</span>
+            </span>
+            <span class="relative w-12 h-7 rounded-full bg-[#7000ff] shrink-0 shadow-inner">
+              <span id="header-sticky-toggle-dot" class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow transition-transform translate-x-5"></span>
+            </span>
+          </button>
         </div>
 
         <button type="submit" class="w-full bg-gradient-to-r from-[#7000ff] to-[#ff007f] text-white font-bold py-3.5 rounded-2xl text-xs transition-colors shadow-md">
@@ -8742,6 +8793,7 @@
       if (weatherLocationInput) weatherLocationInput.value = kiaWeatherConfig.label || 'San Buenaventura, Ixtapaluca, Estado de México';
       var weatherHint = document.getElementById('settings-weather-location-hint');
       if (weatherHint) weatherHint.textContent = kiaWeatherConfig.label ? ('Actual: ' + kiaWeatherConfig.label) : 'Ejemplo: San Buenaventura, Ixtapaluca, Estado de México.';
+      applyHeaderStickyPreference();
 
       if (modalElement && content) {
         modalElement.classList.remove('hidden');
@@ -8793,6 +8845,41 @@
         reader.readAsDataURL(file);
       });
     }
+
+    const HEADER_STICKY_KEY = 'kia_header_sticky';
+    function isHeaderStickyEnabled() {
+      try {
+        const v = localStorage.getItem(HEADER_STICKY_KEY);
+        return v === null ? true : v === '1';
+      } catch (e) { return true; }
+    }
+    function applyHeaderStickyPreference() {
+      const enabled = isHeaderStickyEnabled();
+      document.body.classList.toggle('header-not-sticky', !enabled);
+      document.body.classList.toggle('header-sticky-enabled', enabled);
+      const btn = document.getElementById('header-sticky-toggle');
+      const dot = document.getElementById('header-sticky-toggle-dot');
+      const status = document.getElementById('header-sticky-toggle-status');
+      if (btn) {
+        btn.classList.toggle('bg-[#7000ff]', enabled);
+        btn.classList.toggle('bg-gray-700', !enabled);
+        btn.setAttribute('aria-pressed', String(enabled));
+      }
+      if (dot) {
+        dot.classList.toggle('translate-x-5', enabled);
+        dot.classList.toggle('translate-x-0', !enabled);
+      }
+      if (status) {
+        status.textContent = enabled ? 'ACTIVADO' : 'DESACTIVADO';
+        status.classList.toggle('text-[#c084fc]', enabled);
+        status.classList.toggle('text-gray-500', !enabled);
+      }
+    }
+    window.toggleHeaderSticky = function() {
+      try { localStorage.setItem(HEADER_STICKY_KEY, isHeaderStickyEnabled() ? '0' : '1'); } catch (e) {}
+      applyHeaderStickyPreference();
+    };
+    applyHeaderStickyPreference();
 
     const profileSettingsForm = document.getElementById('profile-settings-form');
     if (profileSettingsForm) {
@@ -17983,6 +18070,12 @@
         if (weatherTopRainEl) weatherTopRainEl.textContent = rainText;
         if (weatherTopMinEl) weatherTopMinEl.textContent = '↓ ' + Math.round(Number(tmin)) + '°';
         if (weatherTopMaxEl) weatherTopMaxEl.textContent = '↑ ' + Math.round(Number(tmax)) + '°';
+        // El botón del header ahora solo muestra el icono (mismo tamaño que
+        // el botón de día/noche); el detalle completo queda en el tooltip.
+        if (weatherTopBubbleEl) {
+          weatherTopBubbleEl.title = 'Clima de hoy · ' + kiaWeatherConfig.label + ' — ' + rainText +
+            ' · ↓ ' + Math.round(Number(tmin)) + '° · ↑ ' + Math.round(Number(tmax)) + '°';
+        }
       } else {
         if (weatherIntroIconEl) weatherIntroIconEl.textContent = icon;
         if (weatherIntroRainEl) weatherIntroRainEl.textContent = rainText;
