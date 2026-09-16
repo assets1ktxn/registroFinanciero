@@ -1972,6 +1972,8 @@
       #app-header > div:nth-child(2) { flex: 0 1 auto; min-width: 0; gap: 5px; }
       #app-header #theme-toggle { padding: 8px; }
       #app-header #theme-toggle i { width: 17px; height: 17px; }
+      #app-header #header-sticky-quick-toggle { padding: 8px; }
+      #app-header #header-sticky-quick-toggle i { width: 17px; height: 17px; }
       .kia-weather-top-bubble { width: 33px; height: 33px; border-radius: 10px; }
       .kia-weather-top-icon { font-size: 16px; }
       .kia-weather-top-tooltip { right: -8px; }
@@ -3379,6 +3381,11 @@
         <!-- BOTÓN PARA MODO CLARO / OSCURO -->
         <button id="theme-toggle" class="p-2.5 md:p-3 bg-gray-950/80 border border-gray-800 rounded-xl hover:border-[#00f0ff]/30 transition-colors text-gray-400 hover:text-[#00f0ff]" title="Alternar tema (Claro / Oscuro / Automático)">
           <i data-lucide="sun" id="theme-icon" class="w-5 h-5"></i>
+        </button>
+
+        <!-- BOTÓN PARA FIJAR / SOLTAR EL ENCABEZADO AL HACER SCROLL (espejo del interruptor de Configuración de Perfil) -->
+        <button id="header-sticky-quick-toggle" onclick="window.toggleHeaderSticky()" class="p-2.5 md:p-3 bg-gray-950/80 border border-gray-800 rounded-xl hover:border-[#00f0ff]/30 transition-colors text-gray-400 hover:text-[#00f0ff]" aria-pressed="true" aria-label="Fijar o soltar el encabezado al desplazar">
+          <i data-lucide="pin" id="header-sticky-quick-icon" class="w-5 h-5"></i>
         </button>
 
           <div id="kia-weather-top-bubble" class="kia-weather-top-bubble" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false" aria-label="Ver detalle del clima de hoy" aria-hidden="true">
@@ -8903,6 +8910,24 @@
         status.textContent = enabled ? 'ACTIVADO' : 'DESACTIVADO';
         status.classList.toggle('text-[#c084fc]', enabled);
         status.classList.toggle('text-gray-500', !enabled);
+      }
+
+      // Botón rápido del encabezado (icono de pin): mismo estado, para
+      // poder fijar/soltar el encabezado sin entrar a Configuración de Perfil.
+      const quickBtn = document.getElementById('header-sticky-quick-toggle');
+      const quickIcon = document.getElementById('header-sticky-quick-icon');
+      if (quickBtn) {
+        quickBtn.setAttribute('aria-pressed', String(enabled));
+        quickBtn.title = enabled
+          ? 'Encabezado fijo arriba (clic para que baje con el scroll)'
+          : 'Encabezado libre, baja con el scroll (clic para fijarlo arriba)';
+        quickBtn.classList.toggle('text-[#00f0ff]', enabled);
+        quickBtn.classList.toggle('border-[#00f0ff]/30', enabled);
+        quickBtn.classList.toggle('text-gray-400', !enabled);
+      }
+      if (quickIcon) {
+        quickIcon.setAttribute('data-lucide', enabled ? 'pin' : 'pin-off');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
       }
     }
     window.toggleHeaderSticky = function() {
